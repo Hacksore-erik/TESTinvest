@@ -122,20 +122,25 @@ export function renderTabBar() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // Первичное позиционирование ползунка
-  requestAnimationFrame(() => moveIndicator(currentTab));
+  // Первичная установка ползунка.
+  // Двойной вызов: сразу (на случай если шрифты уже загружены)
+  // + через 60мс (на случай поздней загрузки) + по window.load.
+  setTimeout(() => moveIndicator(currentTab), 30);
+  setTimeout(() => moveIndicator(currentTab), 200);
 }
 
 function moveIndicator(tabId) {
   const indicator = document.getElementById('tabIndicator');
-  const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
-  if (!indicator || !tab) return;
+  const bar = document.getElementById('tabBar');
+  const tab = bar ? bar.querySelector(`.tab[data-tab="${tabId}"]`) : null;
+  if (!indicator || !bar || !tab) return;
 
-  const tabRect = tab.getBoundingClientRect();
-  const barRect = tab.parentElement.getBoundingClientRect();
-  const offsetX = tabRect.left - barRect.left;
+  // offsetLeft — позиция относительно bar (position: relative подразумевается
+  // через .tab-bar имеющий position: fixed — offsetLeft считается от padding box)
+  const offsetX = tab.offsetLeft;
+  const width = tab.offsetWidth;
 
-  indicator.style.width = tabRect.width + 'px';
+  indicator.style.width = width + 'px';
   indicator.style.transform = `translateX(${offsetX}px)`;
 }
 
@@ -160,5 +165,7 @@ export function getCurrentTab() {
   return currentTab;
 }
 
-// Пересчёт ползунка при повороте экрана / изменении размера
+// Пересчёт ползунка при ресайзе / повороте / полной загрузке
 window.addEventListener('resize', () => moveIndicator(currentTab));
+window.addEventListener('orientationchange', () => setTimeout(() => moveIndicator(currentTab), 100));
+window.addEventListener('load', () => moveIndicator(currentTab));
