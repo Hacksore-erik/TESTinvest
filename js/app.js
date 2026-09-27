@@ -43,6 +43,18 @@ const TABS = {
 };
 
 // ============================================================
+// ===== PUBLIC REFRESH HOOK ==================================
+// ============================================================
+// portfolio.js после загрузки дёргает window.kompasRefreshAll(),
+// чтобы "Путь" и "Я" перерисовались с новыми данными
+window.kompasRefreshAll = () => {
+  const pathRoot = document.getElementById('tab-path');
+  const meRoot = document.getElementById('tab-me');
+  if (pathRoot && pathTab.render) pathTab.render(pathRoot);
+  if (meRoot && meTab.render) meTab.render(meRoot);
+};
+
+// ============================================================
 // ===== INIT =================================================
 // ============================================================
 window.addEventListener('DOMContentLoaded', () => {
