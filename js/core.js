@@ -103,6 +103,8 @@ const TABS = [
   { id: 'me',        label: 'Я',        icon: ICONS.me }
 ];
 
+const TAB_ORDER = TABS.map(t => t.id);
+
 let currentTab = 'path';
 
 export function renderTabBar() {
@@ -122,23 +124,36 @@ export function renderTabBar() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // Первичная установка ползунка.
-  // Двойной вызов: сразу (на случай если шрифты уже загружены)
-  // + через 60мс (на случай поздней загрузки) + по window.load.
+  // Первичное позиционирование — с задержкой, чтобы layout устоялся
   setTimeout(() => moveIndicator(currentTab), 30);
   setTimeout(() => moveIndicator(currentTab), 200);
 }
 
+// ------------------------------------------------------------
+// Ползунок: пересчёт через getBoundingClientRect относительно
+// самого бара. Это даёт точное попадание в центр таба
+// независимо от padding, gap и flex.
+// ------------------------------------------------------------
 function moveIndicator(tabId) {
   const indicator = document.getElementById('tabIndicator');
   const bar = document.getElementById('tabBar');
-  const tab = bar ? bar.querySelector(`.tab[data-tab="${tabId}"]`) : null;
-  if (!indicator || !bar || !tab) return;
+  if (!indicator || !bar) return;
 
-  // offsetLeft — позиция относительно bar (position: relative подразумевается
-  // через .tab-bar имеющий position: fixed — offsetLeft считается от padding box)
-  const offsetX = tab.offsetLeft;
-  const width = tab.offsetWidth;
+  const tab = bar.querySelector(`.tab[data-tab="${tabId}"]`);
+  if (!tab) return;
+
+  const barRect = bar.getBoundingClientRect();
+  const tabRect = tab.getBoundingClientRect();
+
+  // Позиция относительно padding-box бара (без внутреннего padding)
+  // Считаем offset от левого края контейнера:
+  // tabRect.left - barRect.left даёт позицию относительно border-box.
+  // Учитываем padding бара (6px), чтобы попасть в padding-box.
+  const barStyle = getComputedStyle(bar);
+  const padLeft = parseFloat(barStyle.paddingLeft) || 0;
+
+  const offsetX = tabRect.left - barRect.left; // уже учитывает padding
+  const width = tabRect.width;
 
   indicator.style.width = width + 'px';
   indicator.style.transform = `translateX(${offsetX}px)`;
@@ -146,6 +161,8 @@ function moveIndicator(tabId) {
 
 export function switchTab(id) {
   if (!TABS.find(t => t.id === id)) return;
+  if (id === currentTab) return;
+
   currentTab = id;
 
   document.querySelectorAll('.tab-content').forEach(c =>
@@ -165,7 +182,100 @@ export function getCurrentTab() {
   return currentTab;
 }
 
-// Пересчёт ползунка при ресайзе / повороте / полной загрузке
+export function getTabOrder() {
+  return TAB_ORDER.slice();
+}
+
+// ------------------------------------------------------------
+// Пересчёт ползунка при изменениях layout
+// ------------------------------------------------------------
 window.addEventListener('resize', () => moveIndicator(currentTab));
-window.addEventListener('orientationchange', () => setTimeout(() => moveIndicator(currentTab), 100));
+window.addEventListener('orientationchange', () =>
+  setTimeout(() => moveIndicator(currentTab), 100));
 window.addEventListener('load', () => moveIndicator(currentTab));
+
+// ============================================================
+// ===== SWIPE NAVIGATION (как в iOS) =========================
+// ============================================================
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+let isTracking = false;
+let isHorizontalSwipe = false;
+
+const SWIPE_THRESHOLD_X = 60;   // минимум пикселей по X
+const SWIPE_THRESHOLD_Y = 40;   // макс смещение по Y (иначе скролл)
+const SWIPE_MAX_TIME = 600;     // максимум мс на жест
+
+function initSwipe() {
+  const app = document.querySelector('.app');
+  if (!app) return;
+
+  app.addEventListener('touchstart', (e) => {
+    // Игнорируем свайп по интерактивным элементам
+    if (e.target.closest('input, textarea, button, .tab-bar, .scenario, .position, .journal-item, .theme-option, .theme-switcher')) {
+      isTracking = false;
+      return;
+    }
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchStartTime = Date.now();
+    isTracking = true;
+    isHorizontalSwipe = false;
+  }, { passive: true });
+
+  app.addEventListener('touchmove', (e) => {
+    if (!isTracking) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+
+    // Определяем направление жеста один раз
+    if (!isHorizontalSwipe && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      isHorizontalSwipe = Math.abs(dx) > Math.abs(dy) * 1.4;
+    }
+
+    // Если это вертикальный скролл — отпускаем
+    if (!isHorizontalSwipe && Math.abs(dy) > SWIPE_THRESHOLD_Y) {
+      isTracking = false;
+    }
+  }, { passive: true });
+
+  app.addEventListener('touchend', (e) => {
+    if (!isTracking || !isHorizontalSwipe) {
+      isTracking = false;
+      return;
+    }
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+
+    isTracking = false;
+
+    if (dt > SWIPE_MAX_TIME) return;
+    if (Math.abs(dy) > SWIPE_THRESHOLD_Y) return;
+    if (Math.abs(dx) < SWIPE_THRESHOLD_X) return;
+
+    const currentIndex = TAB_ORDER.indexOf(currentTab);
+    if (dx < 0 && currentIndex < TAB_ORDER.length - 1) {
+      // свайп влево → следующая вкладка
+      switchTab(TAB_ORDER[currentIndex + 1]);
+    } else if (dx > 0 && currentIndex > 0) {
+      // свайп вправо → предыдущая вкладка
+      switchTab(TAB_ORDER[currentIndex - 1]);
+    }
+  }, { passive: true });
+
+  app.addEventListener('touchcancel', () => {
+    isTracking = false;
+  }, { passive: true });
+}
+
+// Инициализируем свайпы после готовности DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSwipe);
+} else {
+  initSwipe();
+}
