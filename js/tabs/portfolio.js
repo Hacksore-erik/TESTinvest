@@ -18,7 +18,7 @@ export function template() {
           <h1>Портфель</h1>
           <span class="alfa-badge">Alfa</span>
         </div>
-        <div class="avatar">АК</div>
+        <div class="avatar">ЭМ</div>
       </div>
       <div class="subtitle" id="portfolioSubtitle">Подключи токен, чтобы увидеть свой портфель</div>
     </div>
@@ -224,6 +224,9 @@ async function render(root, portfolio) {
   root.querySelector('#whatif1').textContent = '+' + formatRub(totalValue * 0.03);
   root.querySelector('#whatif2').textContent = '+' + formatRub(totalValue * 0.05);
   root.querySelector('#whatif3').textContent = '+' + formatRub(totalValue * 0.07);
+
+  // Обновить зависимые вкладки
+  if (window.kompasRefreshAll) window.kompasRefreshAll();
 }
 
 // ============================================================
