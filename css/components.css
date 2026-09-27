@@ -1,0 +1,123 @@
+/* ============================================================
+   ===== ROWS (label → value) =================================
+   ============================================================ */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 15px;
+}
+.row .lbl { color: var(--text-secondary); font-weight: 500; }
+.row .val { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.row .val.green { color: var(--accent-green); }
+.row .val.red { color: var(--accent-red); }
+.row .val.yellow { color: var(--accent-yellow); }
+.row .val.blue { color: var(--accent-blue); }
+
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 14px 0;
+}
+
+/* ============================================================
+   ===== TOKEN INPUT ==========================================
+   ============================================================ */
+.token-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.token-input:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
+}
+
+.token-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent-blue), #005BB5);
+  border-radius: var(--radius-sm);
+  color: #FFF;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 6px 20px rgba(0, 113, 227, 0.24);
+}
+.token-btn:active { transform: scale(0.98); }
+.token-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.token-status {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  display: none;
+}
+.token-status.error { display: block; background: var(--accent-red-soft); color: var(--accent-red); border: 1px solid rgba(224, 54, 46, 0.18); }
+.token-status.loading { display: block; background: var(--accent-blue-soft); color: var(--accent-blue); border: 1px solid rgba(0, 113, 227, 0.18); }
+.token-status.ok { display: block; background: var(--accent-green-soft); color: var(--accent-green); border: 1px solid rgba(30, 168, 90, 0.18); }
+
+.token-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  margin-top: 10px;
+}
+.token-hint a { color: var(--accent-blue); }
+
+/* ============================================================
+   ===== CTA ==================================================
+   ============================================================ */
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: var(--accent-blue-soft);
+  border: 1px solid rgba(0, 113, 227, 0.16);
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  transition: all 0.2s;
+}
+.cta:active { transform: scale(0.98); background: rgba(0, 113, 227, 0.14); }
+
+/* ============================================================
+   ===== EMPTY STATE ==========================================
+   ============================================================ */
+.empty-state {
+  padding: 40px 24px;
+  text-align: center;
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 16px; opacity: 0.4; }
+.empty-state .title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.empty-state .desc { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
+
+/* ============================================================
+   ===== HINT BAR =============================================
+   ============================================================ */
+.hint-bar {
+  margin-bottom: 14px;
+  padding: 14px 18px;
+  background: var(--accent-blue-soft);
+  border: 1px solid rgba(0, 113, 227, 0.12);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hint-bar .icon { font-size: 20px; flex-shrink: 0; }
+.hint-bar .text { font-size: 13px; color: var(--text-secondary); font-weight: 500; line-height: 1.4; flex: 1; }
+.hint-bar .text .hl { color: var(--accent-blue); font-weight: 600; }
