@@ -19,15 +19,11 @@
   display: flex;
   justify-content: space-between;
   align-items: stretch;
-  gap: 2px;
   z-index: 200;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.6) inset,
     0 8px 32px rgba(0, 0, 0, 0.10),
     0 2px 8px rgba(0, 0, 0, 0.06);
-  position: fixed;
-  overflow: visible;
-  isolation: isolate;
 }
 
 /* Верхний светлый блик (Liquid Glass) */
@@ -49,14 +45,15 @@
   top: 6px;
   left: 6px;
   height: calc(100% - 12px);
-  width: calc((100% - 12px) / 5 - 1.6px);
+  width: 60px;
   background: linear-gradient(180deg, #FFFFFF 0%, #F5F8FF 100%);
   border-radius: 22px;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 1) inset,
     0 4px 12px rgba(0, 113, 227, 0.14),
     0 1px 3px rgba(0, 0, 0, 0.06);
-  transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1);
+  transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1),
+              width 0.42s cubic-bezier(0.34, 1.4, 0.5, 1);
   pointer-events: none;
   z-index: 0;
 }
@@ -84,11 +81,8 @@
   height: 22px;
   display: flex;
   align-items: center;
-  justifypx-content: center;
-  color: var(--;
-}
-
-.gotextal-tertiary);
+  justify-content: center;
+  color: var(--text-tertiary);
   transition: color 0.28s ease, transform 0.28s ease;
 }
 
@@ -129,7 +123,10 @@
   letter-spacing: 0.10em;
   text-transform: uppercase;
   color: var(--accent-blue);
-  margin-bottom: 14-amount {
+  margin-bottom: 14px;
+}
+
+.goal-amount {
   display: flex;
   align-items: baseline;
   gap: 6px;
@@ -524,10 +521,3 @@
 }
 .journal-block .txt.green { color: var(--accent-green); }
 .journal-block .txt.red   { color: var(--accent-red); }
-
-/* ============================================================
-   ===== BOTTOM PADDING — место под парящий бар ===============
-   ============================================================ */
-.app {
-  padding-bottom: 110px;
-}
