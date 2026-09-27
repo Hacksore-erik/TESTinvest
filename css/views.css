@@ -1,51 +1,124 @@
 /* ============================================================
-   ===== TAB BAR ==============================================
+   ===== TAB BAR — FLOATING LIQUID GLASS ======================
    ============================================================ */
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
 .tab-bar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border-top: 1px solid var(--border-subtle);
+  left: 16px;
+  right: 16px;
+  bottom: calc(13px + env(safe-area-inset-bottom));
+  height: 62px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 28px;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 2px;
   z-index: 200;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 8px 32px rgba(0, 0, 0, 0.10),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  position: fixed;
+  overflow: visible;
+  isolation: isolate;
+}
+
+/* Верхний светлый блик (Liquid Glass) */
+.tab-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 1), transparent);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* Ползунок позади активной иконки */
+.tab-indicator {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  height: calc(100% - 12px);
+  width: calc((100% - 12px) / 5 - 1.6px);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F5F8FF 100%);
+  border-radius: 22px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 4px 12px rgba(0, 113, 227, 0.14),
+    0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .tab {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  padding: 6px 10px;
-  transition: all 0.2s;
-  border-radius: 10px;
+  padding: 4px 8px;
+  transition: transform 0.2s ease;
+  border-radius: 22px;
   flex: 1;
-  max-width: 90px;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.tab:active { opacity: 0.6; }
+
+.tab:active { transform: scale(0.94); }
+
 .tab .tab-icon {
-  font-size: 20px;
-  line-height: 1;
-  filter: grayscale(1) opacity(0.45);
-  transition: filter 0.2s;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justifypx-content: center;
+  color: var(--;
 }
-.tab.active .tab-icon { filter: none; }
+
+.gotextal-tertiary);
+  transition: color 0.28s ease, transform 0.28s ease;
+}
+
+.tab .tab-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tab.active .tab-icon {
+  color: var(--accent-blue);
+  transform: translateY(-1px);
+}
+
 .tab .tab-label {
   font-size: 10px;
   font-weight: 600;
   color: var(--text-tertiary);
   letter-spacing: 0.01em;
-  transition: color 0.2s;
+  transition: color 0.28s ease;
 }
-.tab.active .tab-label { color: var(--accent-blue); }
+
+.tab.active .tab-label {
+  color: var(--accent-blue);
+}
 
 /* ============================================================
    ===== VIEW: PATH ===========================================
@@ -56,10 +129,7 @@
   letter-spacing: 0.10em;
   text-transform: uppercase;
   color: var(--accent-blue);
-  margin-bottom: 14px;
-}
-
-.goal-amount {
+  margin-bottom: 14-amount {
   display: flex;
   align-items: baseline;
   gap: 6px;
@@ -197,7 +267,6 @@
 }
 .insight-highlight { color: var(--accent-teal); font-weight: 600; }
 
-/* Сценарии */
 .scenario {
   padding: 18px 20px;
   background: var(--bg-card-solid);
@@ -360,6 +429,7 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
+
 /* ============================================================
    ===== VIEW: MIRROR =========================================
    ============================================================ */
@@ -454,3 +524,10 @@
 }
 .journal-block .txt.green { color: var(--accent-green); }
 .journal-block .txt.red   { color: var(--accent-red); }
+
+/* ============================================================
+   ===== BOTTOM PADDING — место под парящий бар ===============
+   ============================================================ */
+.app {
+  padding-bottom: 110px;
+}
