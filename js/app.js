@@ -1,35 +1,9 @@
 import { renderTabBar } from './core.js';
 import * as pathTab from './tabs/path.js';
 import * as portfolioTab from './tabs/portfolio.js';
+import * as mirrorTab from './tabs/mirror.js';
+import * as journalTab from './tabs/journal.js';
 import * as meTab from './tabs/me.js';
-
-// ============================================================
-// ===== ЗАГЛУШКИ ДЛЯ MIRROR / JOURNAL ========================
-// ============================================================
-function placeholderMount(title) {
-  return (root) => {
-    root.innerHTML = `
-      <div class="header">
-        <div class="header-top">
-          <div class="header-title-wrap">
-            <h1>${title}</h1>
-            <span class="alfa-badge">Alfa</span>
-          </div>
-          <div class="avatar">АК</div>
-        </div>
-      </div>
-      <div class="container">
-        <div class="card card-neutral">
-          <div class="empty-state">
-            <div class="icon">🚧</div>
-            <div class="title">Вкладка в разработке</div>
-            <div class="desc">Наполним на Шаге 4</div>
-          </div>
-        </div>
-      </div>
-    `;
-  };
-}
 
 // ============================================================
 // ===== РЕГИСТРАЦИЯ ВКЛАДОК ==================================
@@ -37,8 +11,8 @@ function placeholderMount(title) {
 const TABS = {
   'path':      pathTab,
   'portfolio': portfolioTab,
-  'mirror':    { mount: placeholderMount('Зеркало') },
-  'journal':   { mount: placeholderMount('Журнал') },
+  'mirror':    mirrorTab,
+  'journal':   journalTab,
   'me':        meTab
 };
 
@@ -46,12 +20,20 @@ const TABS = {
 // ===== PUBLIC REFRESH HOOK ==================================
 // ============================================================
 // portfolio.js после загрузки дёргает window.kompasRefreshAll(),
-// чтобы "Путь" и "Я" перерисовались с новыми данными
+// чтобы все зависимые вкладки перерисовались с новыми данными
 window.kompasRefreshAll = () => {
-  const pathRoot = document.getElementById('tab-path');
-  const meRoot = document.getElementById('tab-me');
-  if (pathRoot && pathTab.render) pathTab.render(pathRoot);
-  if (meRoot && meTab.render) meTab.render(meRoot);
+  const map = {
+    'tab-path':      pathTab,
+    'tab-me':        meTab,
+    'tab-mirror':    mirrorTab,
+    'tab-journal':   journalTab
+  };
+  Object.entries(map).forEach(([id, mod]) => {
+    const root = document.getElementById(id);
+    if (root && mod.render) {
+      try { mod.render(root); } catch (e) { console.warn('Refresh error', id, e); }
+    }
+  });
 };
 
 // ============================================================
