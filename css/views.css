@@ -360,3 +360,97 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
+/* ============================================================
+   ===== VIEW: MIRROR =========================================
+   ============================================================ */
+.mirror-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 16px;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+.mirror-footer {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-weight: 500;
+}
+.mirror-footer .hl { color: var(--text-primary); font-weight: 600; }
+
+/* ============================================================
+   ===== VIEW: JOURNAL ========================================
+   ============================================================ */
+.journal-item {
+  padding: 18px 20px;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-shadow: var(--shadow-card);
+}
+.journal-item:active {
+  transform: scale(0.985);
+  background: var(--bg-card-hover);
+}
+.journal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.journal-type {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.journal-date {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.journal-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.journal-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+.journal-block {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+.journal-block:last-child { margin-bottom: 0; }
+.journal-block .lbl {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+.journal-block .txt {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.45;
+}
+.journal-block .txt.green { color: var(--accent-green); }
+.journal-block .txt.red   { color: var(--accent-red); }
