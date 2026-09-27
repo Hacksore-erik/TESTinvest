@@ -24,9 +24,9 @@
     0 1px 0 rgba(255, 255, 255, 0.6) inset,
     0 8px 32px rgba(0, 0, 0, 0.10),
     0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: visible;
 }
 
-/* Верхний светлый блик (Liquid Glass) */
 .tab-bar::before {
   content: '';
   position: absolute;
@@ -37,15 +37,16 @@
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 1), transparent);
   border-radius: 1px;
   pointer-events: none;
+  z-index: 2;
 }
 
-/* Ползунок позади активной иконки */
+/* Ползунок — привязан к left: 0, весь сдвиг в translateX */
 .tab-indicator {
   position: absolute;
   top: 6px;
-  left: 6px;
+  left: 0;
   height: calc(100% - 12px);
-  width: 60px;
+  width: 0;
   background: linear-gradient(180deg, #FFFFFF 0%, #F5F8FF 100%);
   border-radius: 22px;
   box-shadow:
@@ -56,6 +57,7 @@
               width 0.42s cubic-bezier(0.34, 1.4, 0.5, 1);
   pointer-events: none;
   z-index: 0;
+  will-change: transform, width;
 }
 
 .tab {
@@ -70,6 +72,7 @@
   transition: transform 0.2s ease;
   border-radius: 22px;
   flex: 1;
+  min-width: 0;
   background: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -108,6 +111,7 @@
   color: var(--text-tertiary);
   letter-spacing: 0.01em;
   transition: color 0.28s ease;
+  white-space: nowrap;
 }
 
 .tab.active .tab-label {
