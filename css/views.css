@@ -40,18 +40,17 @@
   z-index: 2;
 }
 
-/* Ползунок — привязан к left: 0, весь сдвиг в translateX */
 .tab-indicator {
   position: absolute;
   top: 6px;
   left: 0;
   height: calc(100% - 12px);
   width: 0;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F5F8FF 100%);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F0F8FA 100%);
   border-radius: 22px;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 4px 12px rgba(0, 113, 227, 0.14),
+    0 4px 12px rgba(14, 116, 144, 0.16),
     0 1px 3px rgba(0, 0, 0, 0.06);
   transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1),
               width 0.42s cubic-bezier(0.34, 1.4, 0.5, 1);
@@ -168,7 +167,7 @@
   height: 100%;
   background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal));
   border-radius: 4px;
-  box-shadow: 0 0 12px rgba(0, 113, 227, 0.3);
+  box-shadow: 0 0 12px rgba(14, 116, 144, 0.3);
   transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .goal-stats {
@@ -280,8 +279,8 @@
 }
 .scenario:active { transform: scale(0.985); background: var(--bg-card-hover); }
 .scenario.active {
-  border-color: rgba(0, 113, 227, 0.35);
-  background: linear-gradient(160deg, rgba(0, 113, 227, 0.06) 0%, #FFFFFF 70%);
+  border-color: rgba(14, 116, 144, 0.35);
+  background: linear-gradient(160deg, rgba(14, 116, 144, 0.06) 0%, #FFFFFF 70%);
   box-shadow: var(--shadow-hover);
 }
 .scenario-head {
