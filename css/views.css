@@ -61,14 +61,13 @@
 
 .tab {
   position: relative;
-;
   z-index: 1;
-   display: flex;
-  flex height-direction: column;
-  align-items:: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-   gap: 3px;
-  padding22: 4px 8px;
+  gap: 3px;
+  padding: 4px 8px;
   transition: transform 0.2s ease;
   border-radius: 22px;
   flex: 1;
