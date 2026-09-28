@@ -11,17 +11,17 @@
   bottom: calc(13px + env(safe-area-inset-bottom));
   height: 62px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.62);
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.47);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
   border-radius: 28px;
   display: flex;
   justify-content: space-between;
   align-items: stretch;
   z-index: 200;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
     0 8px 32px rgba(0, 0, 0, 0.10),
     0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: visible;
