@@ -10,11 +10,11 @@ export function template() {
       <div class="header-top">
         <div class="header-title-wrap">
           <h1>Путь</h1>
-          <span class="alfa-badge">Alfa</span>
+          <span class="alfa-badge">DEV</span>
         </div>
-        <div class="avatar">АК</div>
+        <div class="avatar">ЭМ</div>
       </div>
-      <div class="subtitle">Не запрещай себе. Веди себя к цели</div>
+      <div class="subtitle">Веди себя к цели</div>
     </div>
 
     <div class="container">
