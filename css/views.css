@@ -384,6 +384,78 @@
 .position-note.warn { color: var(--accent-yellow); }
 .position-note.danger { color: var(--accent-red); }
 
+/* Disabled / Soon */
+.position.disabled {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.position.disabled:active {
+  transform: none;
+  background: var(--bg-card-solid);
+}
+.position-soon {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   ===== CONNECTION STATUS — ПУЛЬСИРУЮЩАЯ ТОЧКА ==============
+   ============================================================ */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  transition: color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.connection-status .status-text {
+  color: inherit;
+  font-variant-numeric: normal;
+}
+
+.connection-status.connected {
+  color: var(--accent-green);
+}
+
+.connection-status .status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  opacity: 1;
+}
+
+.connection-status.connected .status-dot {
+  animation: status-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes status-breathe {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(30, 168, 90, 0.55);
+  }
+  50% {
+    opacity: 0.40;
+    box-shadow: 0 0 0 6px rgba(30, 168, 90, 0);
+  }
+}
+
 /* ============================================================
    ===== VIEW: ME (tax, cost) =================================
    ============================================================ */
