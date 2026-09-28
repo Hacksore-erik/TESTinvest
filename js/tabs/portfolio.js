@@ -16,7 +16,7 @@ export function template() {
       <div class="header-top">
         <div class="header-title-wrap">
           <h1>Портфель</h1>
-          <span class="alfa-badge">Alfa</span>
+          <span class="alfa-badge">DEV</span>
         </div>
         <div class="avatar">ЭМ</div>
       </div>
