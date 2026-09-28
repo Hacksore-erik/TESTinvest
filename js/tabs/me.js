@@ -55,7 +55,7 @@ export function template() {
         <div class="position-note"><span id="goal1Note">1 000 000 ₽ к 31.12.2029</span></div>
       </div>
 
-      <div class="section-header fade-up"><h2>Подключение</h2></div>
+      <div class="section-header fade-up"><h2>Подключения</h2></div>
 
       <div class="position tappable fade-up" id="connectionRow">
         <div class="position-top">
