@@ -10,9 +10,9 @@ export function template() {
       <div class="header-top">
         <div class="header-title-wrap">
           <h1>Зеркало</h1>
-          <span class="alfa-badge">Alfa</span>
+          <span class="alfa-badge">DEV</span>
         </div>
-        <div class="avatar">АК</div>
+        <div class="avatar">ЭМ</div>
       </div>
       <div class="subtitle">Честная картина твоего поведения</div>
     </div>
