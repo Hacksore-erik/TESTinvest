@@ -50,7 +50,7 @@ export function template() {
     <div class="header">
       <div class="header-top">
         <div class="header-title-wrap">
-          <h1>Я</h1>
+          <h1>Профиль</h1>
           <span class="alfa-badge">DEV</span>
         </div>
         <div class="avatar">ЭМ</div>
