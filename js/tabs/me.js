@@ -60,7 +60,7 @@ export function template() {
       <div class="position tappable fade-up" id="connectionRow">
         <div class="position-top">
           <div class="position-ticker">Т-Инвестиции</div>
-          <div class="position-share" id="connectionStatus">
+          <div class="connection-status" id="connectionStatus">
             <span class="status-dot"></span>
             <span class="status-text">Не подключено</span>
           </div>
@@ -105,14 +105,16 @@ export function render(root) {
   const hasData = state.operations.length > 0 || state.totalValue > 0;
 
   const connEl = root.querySelector('#connectionStatus');
+  const textEl = connEl.querySelector('.status-text');
   const disconnEl = root.querySelector('#disconnectBtn');
+
   if (state.token && state.account) {
     connEl.classList.add('connected');
-    connEl.querySelector('.status-text').textContent = 'Подключено';
+    textEl.textContent = 'Подключено';
     disconnEl.style.display = 'block';
   } else {
     connEl.classList.remove('connected');
-    connEl.querySelector('.status-text').textContent = 'Не подключено';
+    textEl.textContent = 'Не подключено';
     disconnEl.style.display = 'none';
   }
 
