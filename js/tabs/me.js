@@ -1,7 +1,6 @@
-import { state, CONFIG, formatRub } from '../core.js';
+import { state, CONFIG, formatRub, switchTab } from '../core.js';
 import { calculateTax } from '../services.js';
 import { disconnect as portfolioDisconnect } from './portfolio.js';
-import { switchTab } from '../core.js';
 
 // ============================================================
 // ===== TEMPLATE =============================================
@@ -57,12 +56,21 @@ export function template() {
       </div>
 
       <div class="section-header fade-up"><h2>Подключение</h2></div>
+
       <div class="position tappable fade-up" id="connectionRow">
         <div class="position-top">
           <div class="position-ticker">Т-Инвестиции</div>
           <div class="position-share" id="connectionStatus" style="color: var(--text-tertiary); font-size: 13px;">● Не подключено</div>
         </div>
         <div class="position-note"><span>Режим: только чтение</span></div>
+      </div>
+
+      <div class="position disabled fade-up">
+        <div class="position-top">
+          <div class="position-ticker">Другие брокеры</div>
+          <div class="position-share position-soon">🔒 Скоро</div>
+        </div>
+        <div class="position-note"><span>А-Инвестиции · Сбер · ВТБ · БКС</span></div>
       </div>
 
       <div class="position tappable fade-up" id="disconnectBtn" style="display: none;">
@@ -82,10 +90,7 @@ export function mount(root) {
   root.innerHTML = template();
 
   root.querySelector('#connectionRow').addEventListener('click', () => switchTab('portfolio'));
-
-  root.querySelector('#disconnectBtn').addEventListener('click', () => {
-    portfolioDisconnect();
-  });
+  root.querySelector('#disconnectBtn').addEventListener('click', () => portfolioDisconnect());
 
   render(root);
 }
@@ -96,7 +101,6 @@ export function mount(root) {
 export function render(root) {
   const hasData = state.operations.length > 0 || state.totalValue > 0;
 
-  // Статус подключения
   const connEl = root.querySelector('#connectionStatus');
   const disconnEl = root.querySelector('#disconnectBtn');
   if (state.token && state.account) {
@@ -109,14 +113,12 @@ export function render(root) {
     disconnEl.style.display = 'none';
   }
 
-  // Цель
   const progress = Math.min((state.totalValue / CONFIG.GOAL) * 100, 100);
   root.querySelector('#goal1Share').textContent = progress.toFixed(0) + '%';
   root.querySelector('#goal1Bar').style.width = progress + '%';
   root.querySelector('#goal1Note').textContent =
     `${formatRub(state.totalValue)} из ${formatRub(CONFIG.GOAL)}`;
 
-  // Налоги
   if (hasData) {
     const taxData = calculateTax(state.operations);
     root.querySelector('#taxIncome').textContent = formatRub(taxData.totalIncome);
@@ -139,7 +141,6 @@ export function render(root) {
       note.innerHTML = `Инвестиционный доход в пределах порога 2,4 млн ₽.<br>Ставка: <span class="hl">13%</span>.`;
     }
 
-    // Цена решений
     root.querySelector('#costCommissions').textContent = formatRub(taxData.commissions);
     root.querySelector('#costTax').textContent = formatRub(taxData.tax);
     root.querySelector('#costMissed').textContent = formatRub(state.totalValue * 0.05);
