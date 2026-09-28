@@ -55,12 +55,15 @@ export function template() {
         <div class="position-note"><span id="goal1Note">1 000 000 ₽ к 31.12.2029</span></div>
       </div>
 
-      <div class="section-header fade-up"><h2>Подключения</h2></div>
+      <div class="section-header fade-up"><h2>Подключение</h2></div>
 
       <div class="position tappable fade-up" id="connectionRow">
         <div class="position-top">
           <div class="position-ticker">Т-Инвестиции</div>
-          <div class="position-share" id="connectionStatus" style="color: var(--text-tertiary); font-size: 13px;">● Не подключено</div>
+          <div class="position-share" id="connectionStatus">
+            <span class="status-dot"></span>
+            <span class="status-text">Не подключено</span>
+          </div>
         </div>
         <div class="position-note"><span>Режим: только чтение</span></div>
       </div>
@@ -104,12 +107,12 @@ export function render(root) {
   const connEl = root.querySelector('#connectionStatus');
   const disconnEl = root.querySelector('#disconnectBtn');
   if (state.token && state.account) {
-    connEl.textContent = '● Подключено';
-    connEl.style.color = 'var(--accent-green)';
+    connEl.classList.add('connected');
+    connEl.querySelector('.status-text').textContent = 'Подключено';
     disconnEl.style.display = 'block';
   } else {
-    connEl.textContent = '● Не подключено';
-    connEl.style.color = 'var(--text-tertiary)';
+    connEl.classList.remove('connected');
+    connEl.querySelector('.status-text').textContent = 'Не подключено';
     disconnEl.style.display = 'none';
   }
 
