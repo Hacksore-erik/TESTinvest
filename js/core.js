@@ -33,8 +33,8 @@ export const parseMoney = (value) => {
   return parseFloat(value.units || 0) + (value.nano || 0) / 1e9;
 };
 
-export const haptic = () => {
-  if (navigator.vibrate) navigator.vibrate(5);
+export const haptic = (ms = 5) => {
+  if (navigator.vibrate) navigator.vibrate(ms);
 };
 
 // ============================================================
@@ -107,10 +107,25 @@ const TAB_ORDER = TABS.map(t => t.id);
 
 let currentTab = 'path';
 
-export function renderTabBar() {
-  const bar = document.getElementById('tabBar');
+// ------------------------------------------------------------
+// Long-press + drag состояние
+// ------------------------------------------------------------
+const LONG_PRESS_MS = 180;      // через сколько зажим активируется
+const DRAG_THRESHOLD = 8;        // px — минимальное движение, чтобы считать drag
 
-  bar.innerHTML = `
+let barEl = null;
+let isLongPressing = false;      // ждём срабатывания таймера
+let isDragging = false;          // уже в режиме drag
+let pressTimer = null;
+let pressStartX = 0;
+let pressStartY = 0;
+let pressedTabId = null;
+let scrubbingTabId = null;       // на какой вкладке сейчас палец при drag
+
+export function renderTabBar() {
+  barEl = document.getElementById('tabBar');
+
+  barEl.innerHTML = `
     <div class="tab-indicator" id="tabIndicator"></div>
     ${TABS.map(t => `
       <button class="tab ${t.id === currentTab ? 'active' : ''}" data-tab="${t.id}">
@@ -120,40 +135,233 @@ export function renderTabBar() {
     `).join('')}
   `;
 
-  bar.querySelectorAll('.tab').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  // --- Клики (для тапа без зажатия) ---
+  barEl.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      // Если был drag — клик игнорируем (иначе сработает второе переключение)
+      if (dragJustEnded) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      switchTab(btn.dataset.tab);
+    });
   });
 
-  // Первичное позиционирование — несколько попыток,
-  // потому что шрифты и layout могут «доехать» с задержкой
+  // --- Long-press + drag ---
+  initScrubbing();
+
+  // Первичное позиционирование ползунка
   setTimeout(() => moveIndicator(currentTab), 0);
   setTimeout(() => moveIndicator(currentTab), 100);
   setTimeout(() => moveIndicator(currentTab), 400);
 }
 
 // ------------------------------------------------------------
-// Ползунок: считаем координаты таба относительно бара.
-// indicator в CSS привязан к left: 0, поэтому translateX
-// включает полную позицию (включая padding бара).
+// Позиция ползунка
 // ------------------------------------------------------------
-function moveIndicator(tabId) {
+function moveIndicator(tabId, animated = true) {
   const indicator = document.getElementById('tabIndicator');
-  const bar = document.getElementById('tabBar');
-  if (!indicator || !bar) return;
+  if (!indicator || !barEl) return;
 
-  const tab = bar.querySelector(`.tab[data-tab="${tabId}"]`);
+  const tab = barEl.querySelector(`.tab[data-tab="${tabId}"]`);
   if (!tab) return;
 
-  const barRect = bar.getBoundingClientRect();
+  const barRect = barEl.getBoundingClientRect();
   const tabRect = tab.getBoundingClientRect();
 
   const offsetX = tabRect.left - barRect.left;
   const width = tabRect.width;
 
+  if (!animated) indicator.style.transition = 'none';
   indicator.style.width = width + 'px';
   indicator.style.transform = `translateX(${offsetX}px)`;
+  if (!animated) {
+    // форсируем reflow, чтобы transition применился снова
+    void indicator.offsetWidth;
+    indicator.style.transition = '';
+  }
 }
 
+// ------------------------------------------------------------
+// Long-press scrubbing
+// ------------------------------------------------------------
+function initScrubbing() {
+  barEl.style.touchAction = 'none';
+  barEl.style.userSelect = 'none';
+  barEl.style.webkitUserSelect = 'none';
+
+  barEl.addEventListener('touchstart', onTouchStart, { passive: false });
+  barEl.addEventListener('touchmove', onTouchMove, { passive: false });
+  barEl.addEventListener('touchend', onTouchEnd);
+  barEl.addEventListener('touchcancel', onTouchCancel);
+}
+
+function onTouchStart(e) {
+  if (e.touches.length !== 1) return;
+
+  const t = e.touches[0];
+  const targetTab = e.target.closest('.tab');
+  if (!targetTab) return;
+
+  pressStartX = t.clientX;
+  pressStartY = t.clientY;
+  pressedTabId = targetTab.dataset.tab;
+  isLongPressing = true;
+  isDragging = false;
+  scrubbingTabId = null;
+
+  // Запускаем таймер long-press
+  pressTimer = setTimeout(() => {
+    if (!isLongPressing) return;
+    enterDragMode();
+  }, LONG_PRESS_MS);
+}
+
+function onTouchMove(e) {
+  if (!isLongPressing && !isDragging) return;
+  if (e.touches.length !== 1) return;
+
+  e.preventDefault();
+
+  const t = e.touches[0];
+  const dx = t.clientX - pressStartX;
+  const dy = t.clientY - pressStartY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  // Если палец ушёл вертикально до срабатывания long-press — отменяем
+  if (isLongPressing && !isDragging && dist > DRAG_THRESHOLD * 2) {
+    if (Math.abs(dy) > Math.abs(dx)) {
+      cancelPress();
+      return;
+    }
+  }
+
+  // Если ещё не в drag, но начал двигаться горизонтально — ускоряем вход
+  if (isLongPressing && !isDragging && Math.abs(dx) > DRAG_THRESHOLD) {
+    clearTimeout(pressTimer);
+    enterDragMode();
+  }
+
+  if (!isDragging) return;
+
+  // Определяем вкладку под пальцем
+  const hoveredTabId = getTabAtX(t.clientX);
+
+  if (hoveredTabId && hoveredTabId !== scrubbingTabId) {
+    scrubbingTabId = hoveredTabId;
+    moveIndicator(hoveredTabId, false);
+    // Подсветить иконку
+    barEl.querySelectorAll('.tab').forEach(el => {
+      el.classList.toggle('scrub-hover', el.dataset.tab === hoveredTabId);
+    });
+    haptic(3);
+  }
+}
+
+function onTouchEnd(e) {
+  if (isDragging) {
+    // Завершаем drag — переключаем вкладку, на которой палец
+    const finalTabId = scrubbingTabId || pressedTabId;
+
+    barEl.classList.remove('scrubbing');
+    barEl.querySelectorAll('.tab').forEach(el => el.classList.remove('scrub-hover'));
+
+    isDragging = false;
+    isLongPressing = false;
+    scrubbingTabId = null;
+
+    // Флаг: клик, который сейчас придёт от touchend, надо проигнорировать
+    dragJustEnded = true;
+    setTimeout(() => { dragJustEnded = false; }, 50);
+
+    if (finalTabId && finalTabId !== currentTab) {
+      switchTab(finalTabId);
+    } else if (finalTabId) {
+      // Уже на этой вкладке — просто вернуть ползунок на место
+      moveIndicator(currentTab);
+    }
+
+    if (e.cancelable) e.preventDefault();
+    return;
+  }
+
+  // Отпустили до срабатывания long-press — обычный тап, отдаём клику
+  cancelPress();
+}
+
+function onTouchCancel() {
+  cancelPress();
+  if (isDragging) {
+    barEl.classList.remove('scrubbing');
+    barEl.querySelectorAll('.tab').forEach(el => el.classList.remove('scrub-hover'));
+    isDragging = false;
+    scrubbingTabId = null;
+    moveIndicator(currentTab);
+  }
+}
+
+function cancelPress() {
+  clearTimeout(pressTimer);
+  pressTimer = null;
+  isLongPressing = false;
+  pressedTabId = null;
+}
+
+// ------------------------------------------------------------
+// Вход в режим «скраббинга»
+// ------------------------------------------------------------
+function enterDragMode() {
+  isDragging = true;
+  isLongPressing = false;
+
+  barEl.classList.add('scrubbing');
+
+  // Начинаем со вкладки, на которой палец
+  const startTabId = getTabAtX(pressStartX) || pressedTabId;
+  if (startTabId) {
+    scrubbingTabId = startTabId;
+    moveIndicator(startTabId, false);
+
+    barEl.querySelectorAll('.tab').forEach(el => {
+      el.classList.toggle('scrub-hover', el.dataset.tab === startTabId);
+    });
+  }
+
+  // Лёгкая вибрация — сигнал, что режим активен
+  haptic(8);
+}
+
+// ------------------------------------------------------------
+// Какая вкладка под координатой X
+// ------------------------------------------------------------
+function getTabAtX(clientX) {
+  if (!barEl) return null;
+  const tabs = barEl.querySelectorAll('.tab');
+  for (const tab of tabs) {
+    const rect = tab.getBoundingClientRect();
+    if (clientX >= rect.left && clientX <= rect.right) {
+      return tab.dataset.tab;
+    }
+  }
+  // Если левее первой — вернуть первую, правее последней — последнюю
+  const first = tabs[0];
+  const last = tabs[tabs.length - 1];
+  if (first && last) {
+    const firstRect = first.getBoundingClientRect();
+    const lastRect = last.getBoundingClientRect();
+    if (clientX < firstRect.left) return first.dataset.tab;
+    if (clientX > lastRect.right) return last.dataset.tab;
+  }
+  return null;
+}
+
+// Флаг: клик, который прилетит после drag, надо проигнорировать
+let dragJustEnded = false;
+
+// ------------------------------------------------------------
+// Публичные функции роутера
+// ------------------------------------------------------------
 export function switchTab(id) {
   if (!TABS.find(t => t.id === id)) return;
 
@@ -169,7 +377,7 @@ export function switchTab(id) {
   moveIndicator(id);
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  haptic();
+  haptic(5);
 }
 
 export function getCurrentTab() {
@@ -187,7 +395,7 @@ window.addEventListener('orientationchange', () =>
 window.addEventListener('load', () => moveIndicator(currentTab));
 
 // ============================================================
-// ===== SWIPE NAVIGATION =====================================
+// ===== SWIPE NAVIGATION (по контенту) =======================
 // ============================================================
 let touchStartX = 0;
 let touchStartY = 0;
@@ -204,7 +412,8 @@ function initSwipe() {
   if (!app) return;
 
   app.addEventListener('touchstart', (e) => {
-    // Игнорируем только поля ввода. Таб-бар и карточки — свайпаются.
+    // Таб-бар обрабатывается скраббингом — не мешаем
+    if (e.target.closest('.tab-bar')) return;
     if (e.target.closest('input, textarea')) {
       isTracking = false;
       return;
