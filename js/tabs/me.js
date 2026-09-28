@@ -7,6 +7,46 @@ import { disconnect as portfolioDisconnect } from './portfolio.js';
 // ============================================================
 export function template() {
   return `
+    <style>
+      .connection-status {
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+        font-size: 13px;
+        font-weight: 600;
+        color: #9A9A9E;
+        transition: color 0.3s ease;
+        flex-shrink: 0;
+      }
+      .connection-status.connected {
+        color: #1EA85A !important;
+      }
+      .connection-status .status-dot {
+        display: inline-block !important;
+        width: 6px;
+        height: 6px;
+        min-width: 6px;
+        min-height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+      }
+      .connection-status.connected .status-dot {
+        animation: status-breathe 4s ease-in-out infinite;
+      }
+      @keyframes status-breathe {
+        0%, 100% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 rgba(30, 168, 90, 0.45);
+        }
+        50% {
+          opacity: 0.55;
+          box-shadow: 0 0 0 3px rgba(30, 168, 90, 0);
+        }
+      }
+    </style>
+
     <div class="header">
       <div class="header-top">
         <div class="header-title-wrap">
