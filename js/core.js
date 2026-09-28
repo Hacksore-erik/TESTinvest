@@ -53,43 +53,80 @@ export function clearToken() {
 }
 
 // ============================================================
-// ===== SVG ICONS ============================================
+// ===== SVG ICONS — outline + filled =========================
 // ============================================================
 const ICONS = {
-  path: `
-    <svg viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9"/>
-      <path d="M15.5 8.5 L13.5 13.5 L8.5 15.5 L10.5 10.5 Z"/>
-    </svg>
-  `,
-  portfolio: `
-    <svg viewBox="0 0 24 24">
-      <path d="M3 20h18"/>
-      <rect x="4" y="13" width="4" height="6" rx="1"/>
-      <rect x="10" y="9" width="4" height="10" rx="1"/>
-      <rect x="16" y="5" width="4" height="14" rx="1"/>
-    </svg>
-  `,
-  mirror: `
-    <svg viewBox="0 0 24 24">
-      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  `,
-  journal: `
-    <svg viewBox="0 0 24 24">
-      <path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4z"/>
-      <path d="M5 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"/>
-      <path d="M9 9h6"/>
-      <path d="M9 13h6"/>
-    </svg>
-  `,
-  me: `
-    <svg viewBox="0 0 24 24">
-      <circle cx="12" cy="8" r="4"/>
-      <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>
-    </svg>
-  `
+  path: {
+    outline: `
+      <svg viewBox="0 0 24 24" class="ico-outline">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M15.5 8.5 L13.5 13.5 L8.5 15.5 L10.5 10.5 Z"/>
+      </svg>
+    `,
+    filled: `
+      <svg viewBox="0 0 24 24" class="ico-filled">
+        <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.5 6.5l-2 5-5 2 2-5 5-2z"/>
+      </svg>
+    `
+  },
+  portfolio: {
+    outline: `
+      <svg viewBox="0 0 24 24" class="ico-outline">
+        <rect x="4" y="13" width="4" height="6" rx="1"/>
+        <rect x="10" y="9" width="4" height="10" rx="1"/>
+        <rect x="16" y="5" width="4" height="14" rx="1"/>
+      </svg>
+    `,
+    filled: `
+      <svg viewBox="0 0 24 24" class="ico-filled">
+        <rect x="4" y="13" width="4" height="7" rx="1"/>
+        <rect x="10" y="9" width="4" height="11" rx="1"/>
+        <rect x="16" y="5" width="4" height="15" rx="1"/>
+      </svg>
+    `
+  },
+  mirror: {
+    outline: `
+      <svg viewBox="0 0 24 24" class="ico-outline">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    `,
+    filled: `
+      <svg viewBox="0 0 24 24" class="ico-filled">
+        <path d="M12 5c-6.5 0-10 7-10 7s3.5 7 10 7 10-7 10-7-3.5-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+      </svg>
+    `
+  },
+  journal: {
+    outline: `
+      <svg viewBox="0 0 24 24" class="ico-outline">
+        <path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4z"/>
+        <path d="M5 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"/>
+        <path d="M9 9h6"/>
+        <path d="M9 13h6"/>
+      </svg>
+    `,
+    filled: `
+      <svg viewBox="0 0 24 24" class="ico-filled">
+        <path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14V3H5zm3 4h8v2H8V7zm0 4h8v2H8v-2z"/>
+      </svg>
+    `
+  },
+  me: {
+    outline: `
+      <svg viewBox="0 0 24 24" class="ico-outline">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>
+      </svg>
+    `,
+    filled: `
+      <svg viewBox="0 0 24 24" class="ico-filled">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1H4z"/>
+      </svg>
+    `
+  }
 };
 
 // ============================================================
@@ -110,17 +147,18 @@ let currentTab = 'path';
 // ------------------------------------------------------------
 // Long-press + drag состояние
 // ------------------------------------------------------------
-const LONG_PRESS_MS = 180;      // через сколько зажим активируется
-const DRAG_THRESHOLD = 8;        // px — минимальное движение, чтобы считать drag
+const LONG_PRESS_MS = 180;
+const DRAG_THRESHOLD = 8;
 
 let barEl = null;
-let isLongPressing = false;      // ждём срабатывания таймера
-let isDragging = false;          // уже в режиме drag
+let isLongPressing = false;
+let isDragging = false;
 let pressTimer = null;
 let pressStartX = 0;
 let pressStartY = 0;
 let pressedTabId = null;
-let scrubbingTabId = null;       // на какой вкладке сейчас палец при drag
+let scrubbingTabId = null;
+let dragJustEnded = false;
 
 export function renderTabBar() {
   barEl = document.getElementById('tabBar');
@@ -129,16 +167,17 @@ export function renderTabBar() {
     <div class="tab-indicator" id="tabIndicator"></div>
     ${TABS.map(t => `
       <button class="tab ${t.id === currentTab ? 'active' : ''}" data-tab="${t.id}">
-        <div class="tab-icon">${t.icon}</div>
+        <div class="tab-icon">
+          ${t.icon.outline}
+          ${t.icon.filled}
+        </div>
         <div class="tab-label">${t.label}</div>
       </button>
     `).join('')}
   `;
 
-  // --- Клики (для тапа без зажатия) ---
   barEl.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      // Если был drag — клик игнорируем (иначе сработает второе переключение)
       if (dragJustEnded) {
         e.preventDefault();
         e.stopPropagation();
@@ -148,17 +187,15 @@ export function renderTabBar() {
     });
   });
 
-  // --- Long-press + drag ---
   initScrubbing();
 
-  // Первичное позиционирование ползунка
   setTimeout(() => moveIndicator(currentTab), 0);
   setTimeout(() => moveIndicator(currentTab), 100);
   setTimeout(() => moveIndicator(currentTab), 400);
 }
 
 // ------------------------------------------------------------
-// Позиция ползунка
+// Ползунок
 // ------------------------------------------------------------
 function moveIndicator(tabId, animated = true) {
   const indicator = document.getElementById('tabIndicator');
@@ -177,7 +214,6 @@ function moveIndicator(tabId, animated = true) {
   indicator.style.width = width + 'px';
   indicator.style.transform = `translateX(${offsetX}px)`;
   if (!animated) {
-    // форсируем reflow, чтобы transition применился снова
     void indicator.offsetWidth;
     indicator.style.transition = '';
   }
@@ -199,7 +235,6 @@ function initScrubbing() {
 
 function onTouchStart(e) {
   if (e.touches.length !== 1) return;
-
   const t = e.touches[0];
   const targetTab = e.target.closest('.tab');
   if (!targetTab) return;
@@ -211,7 +246,6 @@ function onTouchStart(e) {
   isDragging = false;
   scrubbingTabId = null;
 
-  // Запускаем таймер long-press
   pressTimer = setTimeout(() => {
     if (!isLongPressing) return;
     enterDragMode();
@@ -221,7 +255,6 @@ function onTouchStart(e) {
 function onTouchMove(e) {
   if (!isLongPressing && !isDragging) return;
   if (e.touches.length !== 1) return;
-
   e.preventDefault();
 
   const t = e.touches[0];
@@ -229,7 +262,6 @@ function onTouchMove(e) {
   const dy = t.clientY - pressStartY;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
-  // Если палец ушёл вертикально до срабатывания long-press — отменяем
   if (isLongPressing && !isDragging && dist > DRAG_THRESHOLD * 2) {
     if (Math.abs(dy) > Math.abs(dx)) {
       cancelPress();
@@ -237,7 +269,6 @@ function onTouchMove(e) {
     }
   }
 
-  // Если ещё не в drag, но начал двигаться горизонтально — ускоряем вход
   if (isLongPressing && !isDragging && Math.abs(dx) > DRAG_THRESHOLD) {
     clearTimeout(pressTimer);
     enterDragMode();
@@ -245,13 +276,11 @@ function onTouchMove(e) {
 
   if (!isDragging) return;
 
-  // Определяем вкладку под пальцем
   const hoveredTabId = getTabAtX(t.clientX);
 
   if (hoveredTabId && hoveredTabId !== scrubbingTabId) {
     scrubbingTabId = hoveredTabId;
     moveIndicator(hoveredTabId, false);
-    // Подсветить иконку
     barEl.querySelectorAll('.tab').forEach(el => {
       el.classList.toggle('scrub-hover', el.dataset.tab === hoveredTabId);
     });
@@ -261,7 +290,6 @@ function onTouchMove(e) {
 
 function onTouchEnd(e) {
   if (isDragging) {
-    // Завершаем drag — переключаем вкладку, на которой палец
     const finalTabId = scrubbingTabId || pressedTabId;
 
     barEl.classList.remove('scrubbing');
@@ -271,14 +299,12 @@ function onTouchEnd(e) {
     isLongPressing = false;
     scrubbingTabId = null;
 
-    // Флаг: клик, который сейчас придёт от touchend, надо проигнорировать
     dragJustEnded = true;
     setTimeout(() => { dragJustEnded = false; }, 50);
 
     if (finalTabId && finalTabId !== currentTab) {
       switchTab(finalTabId);
     } else if (finalTabId) {
-      // Уже на этой вкладке — просто вернуть ползунок на место
       moveIndicator(currentTab);
     }
 
@@ -286,7 +312,6 @@ function onTouchEnd(e) {
     return;
   }
 
-  // Отпустили до срабатывания long-press — обычный тап, отдаём клику
   cancelPress();
 }
 
@@ -308,33 +333,22 @@ function cancelPress() {
   pressedTabId = null;
 }
 
-// ------------------------------------------------------------
-// Вход в режим «скраббинга»
-// ------------------------------------------------------------
 function enterDragMode() {
   isDragging = true;
   isLongPressing = false;
-
   barEl.classList.add('scrubbing');
 
-  // Начинаем со вкладки, на которой палец
   const startTabId = getTabAtX(pressStartX) || pressedTabId;
   if (startTabId) {
     scrubbingTabId = startTabId;
     moveIndicator(startTabId, false);
-
     barEl.querySelectorAll('.tab').forEach(el => {
       el.classList.toggle('scrub-hover', el.dataset.tab === startTabId);
     });
   }
-
-  // Лёгкая вибрация — сигнал, что режим активен
   haptic(8);
 }
 
-// ------------------------------------------------------------
-// Какая вкладка под координатой X
-// ------------------------------------------------------------
 function getTabAtX(clientX) {
   if (!barEl) return null;
   const tabs = barEl.querySelectorAll('.tab');
@@ -344,7 +358,6 @@ function getTabAtX(clientX) {
       return tab.dataset.tab;
     }
   }
-  // Если левее первой — вернуть первую, правее последней — последнюю
   const first = tabs[0];
   const last = tabs[tabs.length - 1];
   if (first && last) {
@@ -356,11 +369,8 @@ function getTabAtX(clientX) {
   return null;
 }
 
-// Флаг: клик, который прилетит после drag, надо проигнорировать
-let dragJustEnded = false;
-
 // ------------------------------------------------------------
-// Публичные функции роутера
+// Публичные функции
 // ------------------------------------------------------------
 export function switchTab(id) {
   if (!TABS.find(t => t.id === id)) return;
@@ -388,7 +398,6 @@ export function getTabOrder() {
   return TAB_ORDER.slice();
 }
 
-// Пересчёт при изменениях layout
 window.addEventListener('resize', () => moveIndicator(currentTab));
 window.addEventListener('orientationchange', () =>
   setTimeout(() => moveIndicator(currentTab), 100));
@@ -412,7 +421,6 @@ function initSwipe() {
   if (!app) return;
 
   app.addEventListener('touchstart', (e) => {
-    // Таб-бар обрабатывается скраббингом — не мешаем
     if (e.target.closest('.tab-bar')) return;
     if (e.target.closest('input, textarea')) {
       isTracking = false;
