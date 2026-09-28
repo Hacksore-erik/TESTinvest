@@ -68,11 +68,6 @@ a { color: inherit; text-decoration: none; }
   --accent-purple: #7B5BD6;
   --accent-purple-soft: rgba(123, 91, 214, 0.10);
 
-  /* Бейдж ALFA — оставляем фиолетовый как контрастный маркер */
-  --badge-alfa-bg: rgba(123, 91, 214, 0.12);
-  --badge-alfa-text: #7B5BD6;
-  --badge-alfa-border: rgba(123, 91, 214, 0.20);
-
   /* Геометрия */
   --blur-strength: 40px;
   --radius-lg: 22px;
@@ -160,22 +155,23 @@ body::before {
   letter-spacing: -0.01em;
 }
 
-/* Бейдж ALFA */
+/* Бейдж DEV */
 .alfa-badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
-  background: var(--badge-alfa-bg);
-  border: 1px solid var(--badge-alfa-border);
+  padding: 4px 9px;
+  background: linear-gradient(135deg, #7B5BD6, #4A6CF7);
+  border: none;
   border-radius: 6px;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.14em;
-  color: var(--badge-alfa-text);
+  color: #FFFFFF;
   text-transform: uppercase;
   line-height: 1;
   transform: translateY(-4px);
   user-select: none;
+  box-shadow: 0 2px 8px rgba(123,91,214,0.30);
 }
 
 .avatar {
