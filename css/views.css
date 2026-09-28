@@ -11,7 +11,7 @@
   bottom: calc(13px + env(safe-area-inset-bottom));
   height: 62px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.47);
+  background: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(36px) saturate(200%);
   -webkit-backdrop-filter: blur(36px) saturate(200%);
   border: 1px solid rgba(255, 255, 255, 0.65);
