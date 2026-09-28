@@ -11,10 +11,10 @@
   bottom: calc(13px + env(safe-area-inset-bottom));
   height: 62px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.32);
-backdrop-filter: blur(26px) saturate(180%);
--webkit-backdrop-filter: blur(26px) saturate(180%);
-border: 1px solid rgba(255, 255, 255, 0.50);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   border-radius: 28px;
   display: flex;
   justify-content: space-between;
@@ -61,13 +61,14 @@ border: 1px solid rgba(255, 255, 255, 0.50);
 
 .tab {
   position: relative;
+;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+   display: flex;
+  flex height-direction: column;
+  align-items:: center;
   justify-content: center;
-  gap: 3px;
-  padding: 4px 8px;
+   gap: 3px;
+  padding22: 4px 8px;
   transition: transform 0.2s ease;
   border-radius: 22px;
   flex: 1;
@@ -78,30 +79,59 @@ border: 1px solid rgba(255, 255, 255, 0.50);
 
 .tab:active { transform: scale(0.94); }
 
+/* Контейнер иконки — обе SVG лежат друг на друге */
 .tab .tab-icon {
   width: 22px;
   height: 22px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-tertiary);
-  transition: color 0.28s ease, transform 0.28s ease;
+  transition: color 0.28s ease;
 }
 
 .tab .tab-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 22pxpx;
   display: block;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: opacity 0.24s ease, transform 0.24s ease;
 }
 
+/* Outline — видна по умолчанию */
+.tab .tab-icon svg.ico-outline {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Filled — скрыта по умолчанию */
+.tab .tab-icon svg.ico-filled {
+  stroke: none;
+  fill: currentColor;
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+/* Активная вкладка */
 .tab.active .tab-icon {
   color: var(--accent-blue);
-  transform: translateY(-1px);
+}
+
+.tab.active .tab-icon svg.ico-outline {
+  opacity: 0;
+  transform: scale(1.05);
+}
+
+.tab.active .tab-icon svg.ico-filled {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .tab .tab-label {
@@ -115,6 +145,39 @@ border: 1px solid rgba(255, 255, 255, 0.50);
 
 .tab.active .tab-label {
   color: var(--accent-blue);
+}
+
+/* ============================================================
+   ===== SCRUBBING MODE (long-press + drag) ===================
+   ============================================================ */
+.tab-bar.scrubbing .tab .tab-icon {
+  transform: scale(1.12);
+  transition: transform 0.18s cubic-bezier(0.34, 1.4, 0.5, 1),
+              color 0.18s ease;
+}
+
+.tab-bar.scrubbing .tab .tab-label {
+  transform: translateY(-1px);
+  transition: transform 0.18s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.tab-bar.scrubbing .tab.scrub-hover .tab-icon {
+  color: var(--accent-blue);
+  transform: scale(1.18);
+}
+
+.tab-bar.scrubbing .tab.scrub-hover .tab-label {
+  color: var(--accent-blue);
+  font-weight: 700;
+}
+
+.tab-bar.scrubbing .tab:active {
+  transform: none;
+}
+
+.tab-bar.scrubbing .tab-indicator {
+  transition: transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              width 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* ============================================================
