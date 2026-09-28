@@ -84,7 +84,16 @@ export function template() {
           <span class="val" id="costTotal">—</span>
         </div>
       </div>
-
+      
+<div class="section-header fade-up"><h2>Мои цели</h2></div>
+      <div class="position tappable fade-up">
+        <div class="position-top">
+          <div class="position-ticker">🏠 Квартира</div>
+          <div class="position-share" id="goal1Share">—</div>
+        </div>
+        <div class="position-bar"><div class="position-bar-fill green" id="goal1Bar" style="width: 0%"></div></div>
+        <div class="position-note"><span id="goal1Note">1 000 000 ₽ к 31.12.2029</span></div>
+      </div>
       <div class="section-header fade-up"><h2>Подключения</h2></div>
 
       <div class="position tappable fade-up" id="connectionRow">
