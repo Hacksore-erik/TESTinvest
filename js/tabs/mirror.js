@@ -1,5 +1,5 @@
 import { state, formatRub } from '../core.js';
-import { analyzeMirror } from '../services.js';
+import { analyzeMirror, calculateTax } from '../services.js';
 
 // ============================================================
 // ===== TEMPLATE =============================================
@@ -49,6 +49,17 @@ export function template() {
         <div class="row"><span class="lbl">Сделок в дни роста</span><span class="val" id="checksGrowth">—</span></div>
         <div class="row"><span class="lbl">Сделок в дни падения</span><span class="val red" id="checksFall">—</span></div>
         <div class="mirror-footer" id="checkingPatternFooter">Подключи токен, чтобы увидеть анализ твоих операций.</div>
+      </div>
+
+      <div class="card card-red fade-up">
+        <div class="section-title red">Цена твоих решений за год</div>
+        <div class="row"><span class="lbl">Комиссии</span><span class="val" id="costCommissions">—</span></div>
+        <div class="row"><span class="lbl">Налог</span><span class="val" id="costTax">—</span></div>
+        <div class="row"><span class="lbl">Упущено для цели</span><span class="val" id="costMissed">—</span></div>
+        <div class="cost-total">
+          <span class="lbl">Итого — цена решений</span>
+          <span class="val" id="costTotal">—</span>
+        </div>
       </div>
     </div>
   `;
@@ -110,4 +121,23 @@ export function render(root) {
     root.querySelector('#checkingPatternFooter').innerHTML =
       `Недостаточно данных. Нужно минимум <span class="hl">5 дней</span> с операциями.`;
   }
+
+  // Цена решений
+  renderCost(root);
+}
+
+// ============================================================
+// ===== ЦЕНА РЕШЕНИЙ =========================================
+// ============================================================
+function renderCost(root) {
+  const hasData = state.operations.length > 0 || state.totalValue > 0;
+  if (!hasData) return;
+
+  const taxData = calculateTax(state.operations);
+
+  root.querySelector('#costCommissions').textContent = formatRub(taxData.commissions);
+  root.querySelector('#costTax').textContent = formatRub(taxData.tax);
+  root.querySelector('#costMissed').textContent = formatRub(state.totalValue * 0.05);
+  root.querySelector('#costTotal').textContent =
+    formatRub(taxData.commissions + taxData.tax + state.totalValue * 0.05);
 }
