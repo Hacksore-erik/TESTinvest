@@ -12,7 +12,7 @@ export function template() {
           <h1>Путь</h1>
           <span class="alfa-badge">DEV</span>
         </div>
-        <div class="avatar">ЭМ</div>
+        <div class="avatar">И</div>
       </div>
       <div class="subtitle">Веди себя к цели</div>
     </div>
