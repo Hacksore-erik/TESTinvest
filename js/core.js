@@ -144,9 +144,6 @@ const TAB_ORDER = TABS.map(t => t.id);
 
 let currentTab = 'path';
 
-// ------------------------------------------------------------
-// Long-press + drag состояние
-// ------------------------------------------------------------
 const LONG_PRESS_MS = 180;
 const DRAG_THRESHOLD = 8;
 
@@ -194,9 +191,6 @@ export function renderTabBar() {
   setTimeout(() => moveIndicator(currentTab), 400);
 }
 
-// ------------------------------------------------------------
-// Ползунок
-// ------------------------------------------------------------
 function moveIndicator(tabId, animated = true) {
   const indicator = document.getElementById('tabIndicator');
   if (!indicator || !barEl) return;
@@ -219,9 +213,6 @@ function moveIndicator(tabId, animated = true) {
   }
 }
 
-// ------------------------------------------------------------
-// Long-press scrubbing
-// ------------------------------------------------------------
 function initScrubbing() {
   barEl.style.touchAction = 'none';
   barEl.style.userSelect = 'none';
@@ -369,9 +360,6 @@ function getTabAtX(clientX) {
   return null;
 }
 
-// ------------------------------------------------------------
-// Публичные функции
-// ------------------------------------------------------------
 export function switchTab(id) {
   if (!TABS.find(t => t.id === id)) return;
 
@@ -404,7 +392,75 @@ window.addEventListener('orientationchange', () =>
 window.addEventListener('load', () => moveIndicator(currentTab));
 
 // ============================================================
-// ===== SWIPE NAVIGATION (по контенту) =======================
+// ===== STICKY HEADER (сжатие при скролле) ===================
+// ============================================================
+const SCROLL_THRESHOLD = 100;
+let headerTicking = false;
+
+function lerp(from, to, t) {
+  return from + (to - from) * t;
+}
+
+export function initStickyHeader() {
+  updateHeader();
+}
+
+function updateHeader() {
+  const header = document.querySelector('.tab-content.active .header');
+  if (!header) {
+    headerTicking = false;
+    return;
+  }
+
+  const titleEl = header.querySelector('h1');
+  const badgeEl = header.querySelector('.alfa-badge');
+  const subtitleEl = header.querySelector('.subtitle');
+  const avatarEl = header.querySelector('.avatar');
+
+  const y = window.scrollY || window.pageYOffset || 0;
+  const rawProgress = Math.min(Math.max(y / SCROLL_THRESHOLD, 0), 1);
+  const p = 1 - Math.pow(1 - rawProgress, 3);
+
+  if (titleEl) {
+    titleEl.style.fontSize = lerp(34, 22, p).toFixed(2) + 'px';
+    titleEl.style.letterSpacing = lerp(-0.028, -0.032, p).toFixed(4) + 'em';
+  }
+  if (badgeEl) {
+    badgeEl.style.fontSize      = lerp(10, 9, p).toFixed(2) + 'px';
+    badgeEl.style.paddingTop    = lerp(4, 3, p).toFixed(2) + 'px';
+    badgeEl.style.paddingBottom = lerp(4, 3, p).toFixed(2) + 'px';
+    badgeEl.style.paddingLeft   = lerp(9, 7, p).toFixed(2) + 'px';
+    badgeEl.style.paddingRight  = lerp(9, 7, p).toFixed(2) + 'px';
+    badgeEl.style.transform     = 'translateY(' + lerp(-4, -2, p).toFixed(2) + 'px)';
+  }
+  if (subtitleEl) {
+    subtitleEl.style.opacity   = Math.max(0, 1 - p * 1.2).toFixed(3);
+    subtitleEl.style.maxHeight = Math.max(0, 24 - p * 24).toFixed(2) + 'px';
+  }
+  if (avatarEl) {
+    const size = lerp(40, 34, p);
+    avatarEl.style.width    = size.toFixed(2) + 'px';
+    avatarEl.style.height   = size.toFixed(2) + 'px';
+    avatarEl.style.fontSize = lerp(15, 13, p).toFixed(2) + 'px';
+  }
+  header.style.paddingTop = lerp(20, 10, p).toFixed(2) + 'px';
+  header.style.paddingBottom = lerp(16, 8, p).toFixed(2) + 'px';
+  header.classList.toggle('scrolled', rawProgress > 0.05);
+
+  headerTicking = false;
+}
+
+function onHeaderScroll() {
+  if (!headerTicking) {
+    requestAnimationFrame(updateHeader);
+    headerTicking = true;
+  }
+}
+
+window.addEventListener('scroll', onHeaderScroll, { passive: true });
+
+// ============================================================
+// ===== SWIPE NAVIGATION =====================================
 // ============================================================
 let touchStartX = 0;
 let touchStartY = 0;
