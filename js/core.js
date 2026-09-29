@@ -1,3 +1,5 @@
+import { initGlobalHandlers } from './logger.js';
+
 // ============================================================
 // ===== STATE ================================================
 // ============================================================
@@ -16,7 +18,9 @@ export const CONFIG = {
   YEARS_LEFT: 3.25,
   API_URL: 'https://invest-public-api.tinkoff.ru/rest',
   TOKEN_KEY: 'kompas_token',
-  REFRESH_MS: 30000
+  REFRESH_MS: 30000,
+  VERSION: '0.3.0',
+  BUILD: 'DEV'
 };
 
 // ============================================================
@@ -50,6 +54,28 @@ export function loadSavedToken() {
 
 export function clearToken() {
   try { localStorage.removeItem(CONFIG.TOKEN_KEY); } catch (e) {}
+}
+
+const PROFILE_KEY = 'kompas_profile';
+
+export function loadProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return { name: 'Инвестор', avatar: null };
+    const data = JSON.parse(raw);
+    return {
+      name: data.name || 'Инвестор',
+      avatar: data.avatar || null
+    };
+  } catch (e) {
+    return { name: 'Инвестор', avatar: null };
+  }
+}
+
+export function saveProfile(profile) {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch (e) {}
 }
 
 // ============================================================
@@ -137,7 +163,7 @@ const TABS = [
   { id: 'portfolio', label: 'Портфель', icon: ICONS.portfolio },
   { id: 'mirror',    label: 'Зеркало',  icon: ICONS.mirror },
   { id: 'journal',   label: 'Журнал',   icon: ICONS.journal },
-  { id: 'me',        label: 'Я',        icon: ICONS.me }
+  { id: 'me',        label: 'Профиль',  icon: ICONS.me }
 ];
 
 const TAB_ORDER = TABS.map(t => t.id);
@@ -478,6 +504,7 @@ function initSwipe() {
 
   app.addEventListener('touchstart', (e) => {
     if (e.target.closest('.tab-bar')) return;
+    if (e.target.closest('.pager-viewport')) return;
     if (e.target.closest('input, textarea')) {
       isTracking = false;
       return;
@@ -544,3 +571,8 @@ if (document.readyState === 'loading') {
 } else {
   initSwipe();
 }
+
+// ============================================================
+// ===== INIT GLOBAL ERROR HANDLERS ===========================
+// ============================================================
+initGlobalHandlers();
