@@ -342,3 +342,59 @@ body::before {
   .card-hero { padding: 22px 20px; }
   .tab-content { padding-top: calc(env(safe-area-inset-top, 14px) + 82px); }
 }
+/* ============================================================
+   ===== ЗАПРЕТ ЗУМА, ВЫДЕЛЕНИЯ И КОПИРОВАНИЯ =================
+   ============================================================ */
+html {
+  /* Отключает pinch-zoom и двойной тап-зум */
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  /* Запрет выделения текста */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  /* Запрет всплывающего меню при долгом тапе */
+  -webkit-touch-callout: none;
+
+  /* Отключение подсветки при тапе */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Исключения — где выделение нужно */
+input,
+textarea,
+.token-input {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Все кнопки, лейблы, цифры — без выделения и callout */
+button,
+.tab,
+.scenario,
+.position,
+.journal-item,
+.header,
+.header h1,
+.alfa-badge,
+.goal-amount,
+.row,
+.section-title,
+.cost-total,
+.card {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
