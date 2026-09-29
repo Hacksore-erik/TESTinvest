@@ -443,8 +443,8 @@ function updateHeader() {
     avatarEl.style.height   = size.toFixed(2) + 'px';
     avatarEl.style.fontSize = lerp(15, 13, p).toFixed(2) + 'px';
   }
-  header.style.paddingTop = lerp(20, 10, p).toFixed(2) + 'px';
-  header.style.paddingBottom = lerp(16, 8, p).toFixed(2) + 'px';
+  header.style.paddingTop = 'calc(env(safe-area-inset-top, 14px) + ' + lerp(12, 6, p).toFixed(2) + 'px)';
+  header.style.paddingBottom = lerp(12, 8, p).toFixed(2) + 'px';
   header.classList.toggle('scrolled', rawProgress > 0.05);
 
   headerTicking = false;
