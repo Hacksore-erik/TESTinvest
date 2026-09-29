@@ -11,7 +11,7 @@
   bottom: calc(13px + env(safe-area-inset-bottom));
   height: 62px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.47);
   backdrop-filter: blur(36px) saturate(200%);
   -webkit-backdrop-filter: blur(36px) saturate(200%);
   border: 1px solid rgba(255, 255, 255, 0.65);
@@ -46,11 +46,11 @@
   left: 0;
   height: calc(100% - 12px);
   width: 0;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F0F8FA 100%);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F0FAF6 100%);
   border-radius: 22px;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 4px 12px rgba(14, 116, 144, 0.16),
+    0 4px 12px var(--accent-glow),
     0 1px 3px rgba(0, 0, 0, 0.06);
   transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1),
               width 0.42s cubic-bezier(0.34, 1.4, 0.5, 1);
@@ -78,7 +78,6 @@
 
 .tab:active { transform: scale(0.94); }
 
-/* Контейнер иконки — обе SVG лежат друг на друге */
 .tab .tab-icon {
   width: 22px;
   height: 22px;
@@ -91,15 +90,17 @@
 }
 
 .tab .tab-icon svg {
-  width: 22pxpx;
+  width: 22px;
+  height: 22px;
   display: block;
   position: absolute;
   top: 0;
   left: 0;
-  transition: opacity 0.24s ease, transform 0.24s ease;
+  transition:
+    opacity 0.42s cubic-bezier(0.34, 1.4, 0.5, 1),
+    transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
-/* Outline — видна по умолчанию */
 .tab .tab-icon svg.ico-outline {
   stroke: currentColor;
   fill: none;
@@ -110,7 +111,6 @@
   transform: scale(1);
 }
 
-/* Filled — скрыта по умолчанию */
 .tab .tab-icon svg.ico-filled {
   stroke: none;
   fill: currentColor;
@@ -118,7 +118,6 @@
   transform: scale(0.92);
 }
 
-/* Активная вкладка */
 .tab.active .tab-icon {
   color: var(--accent-blue);
 }
@@ -146,34 +145,24 @@
   color: var(--accent-blue);
 }
 
-/* ============================================================
-   ===== SCRUBBING MODE (long-press + drag) ===================
-   ============================================================ */
+/* Scrubbing */
 .tab-bar.scrubbing .tab .tab-icon {
   transform: scale(1.12);
-  transition: transform 0.18s cubic-bezier(0.34, 1.4, 0.5, 1),
-              color 0.18s ease;
+  transition: transform 0.18s cubic-bezier(0.34, 1.4, 0.5, 1), color 0.18s ease;
 }
-
 .tab-bar.scrubbing .tab .tab-label {
   transform: translateY(-1px);
   transition: transform 0.18s cubic-bezier(0.34, 1.4, 0.5, 1);
 }
-
 .tab-bar.scrubbing .tab.scrub-hover .tab-icon {
   color: var(--accent-blue);
   transform: scale(1.18);
 }
-
 .tab-bar.scrubbing .tab.scrub-hover .tab-label {
   color: var(--accent-blue);
   font-weight: 700;
 }
-
-.tab-bar.scrubbing .tab:active {
-  transform: none;
-}
-
+.tab-bar.scrubbing .tab:active { transform: none; }
 .tab-bar.scrubbing .tab-indicator {
   transition: transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
               width 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -227,9 +216,9 @@
 }
 .goal-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal));
+  background: var(--accent-blue);
   border-radius: 4px;
-  box-shadow: 0 0 12px rgba(14, 116, 144, 0.3);
+  box-shadow: 0 0 10px var(--accent-blue-glow);
   transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .goal-stats {
@@ -268,9 +257,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--accent-blue-soft);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--accent-blue-border);
 }
 .option .arrow {
   color: var(--accent-blue);
@@ -304,9 +293,9 @@
   animation: pulse 2s infinite;
 }
 @keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(30, 168, 90, 0.4); }
-  70%  { box-shadow: 0 0 0 10px rgba(30, 168, 90, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(30, 168, 90, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(46, 125, 91, 0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(46, 125, 91, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(46, 125, 91, 0); }
 }
 
 .insight-label {
@@ -314,7 +303,7 @@
   font-weight: 700;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: var(--accent-teal);
+  color: var(--accent-dark);
   margin-bottom: 14px;
   display: flex;
   align-items: center;
@@ -327,7 +316,7 @@
   font-weight: 500;
   letter-spacing: -0.01em;
 }
-.insight-highlight { color: var(--accent-teal); font-weight: 600; }
+.insight-highlight { color: var(--accent-dark); font-weight: 600; }
 
 .scenario {
   padding: 18px 20px;
@@ -341,8 +330,8 @@
 }
 .scenario:active { transform: scale(0.985); background: var(--bg-card-hover); }
 .scenario.active {
-  border-color: rgba(14, 116, 144, 0.35);
-  background: linear-gradient(160deg, rgba(14, 116, 144, 0.06) 0%, #FFFFFF 70%);
+  border-color: var(--accent-blue-border);
+  background: linear-gradient(160deg, var(--accent-blue-soft) 0%, #FFFFFF 70%);
   box-shadow: var(--shadow-hover);
 }
 .scenario-head {
@@ -368,14 +357,14 @@
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   color: transparent;
   transition: all 0.2s;
 }
 .scenario.active .scenario-check {
-  background: var(--accent-blue);
-  border-color: var(--accent-blue);
-  color: white;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #FFFFFF;
 }
 .scenario-desc {
   font-size: 15px;
@@ -432,9 +421,9 @@
   margin: 8px 0 10px;
 }
 .position-bar-fill { height: 100%; border-radius: 2px; }
-.position-bar-fill.green  { background: linear-gradient(90deg, var(--accent-green), #17A050); }
-.position-bar-fill.yellow { background: linear-gradient(90deg, var(--accent-yellow), #A86A00); }
-.position-bar-fill.red    { background: linear-gradient(90deg, var(--accent-red), #C42D26); }
+.position-bar-fill.green  { background: var(--accent-green); }
+.position-bar-fill.yellow { background: var(--accent-yellow); }
+.position-bar-fill.red    { background: var(--accent-red); }
 .position-note {
   font-size: 13px;
   color: var(--text-tertiary);
@@ -443,7 +432,7 @@
   align-items: center;
   gap: 6px;
 }
-.position-note.warn { color: var(--accent-yellow); }
+.position-note.warn { color: var(--accent-yellow-dark); }
 .position-note.danger { color: var(--accent-red); }
 
 /* Disabled / Soon */
@@ -468,7 +457,7 @@
 }
 
 /* ============================================================
-   ===== CONNECTION STATUS — ПУЛЬСИРУЮЩАЯ ТОЧКА ==============
+   ===== CONNECTION STATUS ====================================
    ============================================================ */
 .connection-status {
   display: flex;
@@ -481,16 +470,13 @@
   transition: color 0.3s ease;
   flex-shrink: 0;
 }
-
 .connection-status .status-text {
   color: inherit;
   font-variant-numeric: normal;
 }
-
 .connection-status.connected {
   color: var(--accent-green);
 }
-
 .connection-status .status-dot {
   display: inline-block;
   width: 6px;
@@ -502,19 +488,17 @@
   flex-shrink: 0;
   opacity: 1;
 }
-
 .connection-status.connected .status-dot {
   animation: status-breathe 4s ease-in-out infinite;
 }
-
 @keyframes status-breathe {
   0%, 100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(30, 168, 90, 0.45);
+    box-shadow: 0 0 0 0 rgba(46, 125, 91, 0.45);
   }
   50% {
     opacity: 0.55;
-    box-shadow: 0 0 0 3px rgba(30, 168, 90, 0);
+    box-shadow: 0 0 0 3px rgba(46, 125, 91, 0);
   }
 }
 
@@ -545,7 +529,7 @@
   line-height: 1.5;
   font-weight: 500;
 }
-.tax-note .hl { color: var(--accent-yellow); font-weight: 700; }
+.tax-note .hl { color: var(--accent-yellow-dark); font-weight: 700; }
 
 .cost-total {
   margin-top: 16px;
