@@ -119,6 +119,9 @@ export function mount(root) {
       profile.avatar = reader.result;
       saveProfile(profile);
       applyAvatar(root, profile.avatar);
+
+      // Обновить аватар в шапке всех вкладок
+      window.dispatchEvent(new CustomEvent('kompas:profile-changed'));
     };
     reader.onerror = () => {
       logError('E-DATA-004', 'Не удалось прочитать файл', { name: file.name });
@@ -197,6 +200,9 @@ function startEditName(root) {
       const profile = loadProfile();
       profile.name = newName;
       saveProfile(profile);
+
+      // Обновить инициал в шапке всех вкладок
+      window.dispatchEvent(new CustomEvent('kompas:profile-changed'));
     }
 
     const newBtn = document.createElement('div');
@@ -206,12 +212,6 @@ function startEditName(root) {
     newBtn.addEventListener('click', () => startEditName(root));
 
     input.replaceWith(newBtn);
-
-    // Обновить инициал в шапке
-    const headerAvatar = document.getElementById('profileHeaderAvatar');
-    if (headerAvatar) {
-      headerAvatar.textContent = (newBtn.textContent.trim()[0] || 'И').toUpperCase();
-    }
   };
 
   input.addEventListener('blur', () => finish(true));
