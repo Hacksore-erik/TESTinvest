@@ -1,22 +1,51 @@
 import { state, CONFIG, parseMoney } from './core.js';
+import { logError, codeFromStatus } from './logger.js';
 
 // ============================================================
 // ===== API CALL =============================================
 // ============================================================
 export async function apiCall(service, method, body = {}) {
-  const res = await fetch(`${CONFIG.API_URL}/${service}/${method}`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${state.token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
+  let res;
+  try {
+    res = await fetch(`${CONFIG.API_URL}/${service}/${method}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+  } catch (e) {
+    // Сетевые ошибки: offline, DNS, CORS, abort
+    const code = e.name === 'AbortError' ? 'E-NET-003' : 'E-NET-001';
+    logError(code, e.message || 'Сетевая ошибка', {
+      service,
+      method
+    });
+    throw e;
+  }
+
   if (!res.ok) {
-    const text = await res.text();
+    const text = await res.text().catch(() => '');
+    const code = codeFromStatus(res.status);
+    logError(code, `HTTP ${res.status}`, {
+      service,
+      method,
+      status: res.status,
+      body: text.slice(0, 500)
+    });
     throw new Error(`${res.status}: ${text}`);
   }
-  return res.json();
+
+  try {
+    return await res.json();
+  } catch (e) {
+    logError('E-PARSE-001', 'Не удалось разобрать JSON', {
+      service,
+      method
+    });
+    throw e;
+  }
 }
 
 // ============================================================
@@ -40,7 +69,8 @@ export async function loadInstrumentNames(positions) {
         names[p.instrumentUid] = name;
       }
     } catch (e) {
-      console.warn('Не удалось загрузить название для', p.figi, e.message);
+      // Уже залогировано внутри apiCall — просто пропускаем
+      console.warn('Не удалось загрузить название для', p.figi);
     }
   });
 
@@ -87,7 +117,12 @@ export async function fetchAccounts() {
     {}
   );
   const accounts = data.accounts || [];
-  if (accounts.length === 0) throw new Error('Не найдено ни одного счёта');
+  if (accounts.length === 0) {
+    logError('E-DATA-001', 'Не найдено ни одного счёта', {
+      accountsReturned: accounts.length
+    });
+    throw new Error('Не найдено ни одного счёта');
+  }
   const account = accounts.find(a => a.status === 1) || accounts[0];
   state.account = account;
   return account;
@@ -106,7 +141,8 @@ export function startAutoRefresh(onUpdate) {
       await fetchPortfolio();
       if (onUpdate) await onUpdate();
     } catch (e) {
-      console.warn('Автообновление не удалось:', e.message);
+      // Ошибка уже залогирована внутри apiCall
+      console.warn('Автообновление не удалось');
     }
   }, CONFIG.REFRESH_MS);
 }
