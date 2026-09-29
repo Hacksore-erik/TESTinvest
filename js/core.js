@@ -79,6 +79,29 @@ export function saveProfile(profile) {
 }
 
 // ============================================================
+// ===== GLOBAL AVATAR (шапка всех вкладок) ===================
+// ============================================================
+export function applyGlobalAvatar() {
+  const profile = loadProfile();
+  const initial = ((profile.name || 'Инвестор').trim()[0] || 'И').toUpperCase();
+
+  document.querySelectorAll('.header .avatar').forEach(el => {
+    if (profile.avatar) {
+      el.textContent = '';
+      el.style.backgroundImage = `url(${profile.avatar})`;
+      el.classList.add('has-photo');
+    } else {
+      el.textContent = initial;
+      el.style.backgroundImage = '';
+      el.classList.remove('has-photo');
+    }
+  });
+}
+
+// Реакция на изменение профиля
+window.addEventListener('kompas:profile-changed', () => applyGlobalAvatar());
+
+// ============================================================
 // ===== SVG ICONS — outline + filled =========================
 // ============================================================
 const ICONS = {
@@ -402,6 +425,9 @@ export function switchTab(id) {
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
   haptic(5);
+
+  // Обновить аватары в шапке (после отрисовки новой вкладки)
+  setTimeout(applyGlobalAvatar, 0);
 }
 
 export function getCurrentTab() {
@@ -576,3 +602,8 @@ if (document.readyState === 'loading') {
 // ===== INIT GLOBAL ERROR HANDLERS ===========================
 // ============================================================
 initGlobalHandlers();
+
+// ============================================================
+// ===== INIT GLOBAL AVATAR ===================================
+// ============================================================
+applyGlobalAvatar();
