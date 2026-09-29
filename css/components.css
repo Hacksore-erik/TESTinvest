@@ -1,5 +1,5 @@
 /* ============================================================
-   ===== ROWS (label → value) =================================
+   ===== ROWS =================================================
    ============================================================ */
 .row {
   display: flex;
@@ -12,7 +12,7 @@
 .row .val { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .row .val.green { color: var(--accent-green); }
 .row .val.red { color: var(--accent-red); }
-.row .val.yellow { color: var(--accent-yellow); }
+.row .val.yellow { color: var(--accent-yellow-dark); }
 .row .val.blue { color: var(--accent-blue); }
 
 .divider {
@@ -37,7 +37,7 @@
 }
 .token-input:focus {
   border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.12);
+  box-shadow: 0 0 0 3px var(--accent-blue-soft);
 }
 
 .token-btn {
@@ -49,7 +49,7 @@
   font-size: 15px;
   font-weight: 600;
   transition: all 0.2s;
-  box-shadow: 0 6px 20px rgba(14, 116, 144, 0.24);
+  box-shadow: 0 6px 20px var(--accent-blue-glow);
 }
 .token-btn:active { transform: scale(0.98); }
 .token-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -62,9 +62,9 @@
   margin-bottom: 10px;
   display: none;
 }
-.token-status.error { display: block; background: var(--accent-red-soft); color: var(--accent-red); border: 1px solid rgba(224, 54, 46, 0.18); }
-.token-status.loading { display: block; background: var(--accent-blue-soft); color: var(--accent-blue); border: 1px solid rgba(14, 116, 144, 0.18); }
-.token-status.ok { display: block; background: var(--accent-green-soft); color: var(--accent-green); border: 1px solid rgba(30, 168, 90, 0.18); }
+.token-status.error { display: block; background: var(--accent-red-soft); color: var(--accent-red); border: 1px solid rgba(196, 66, 58, 0.18); }
+.token-status.loading { display: block; background: var(--accent-blue-soft); color: var(--accent-blue); border: 1px solid var(--accent-blue-border); }
+.token-status.ok { display: block; background: var(--accent-green-soft); color: var(--accent-green); border: 1px solid rgba(46, 125, 91, 0.18); }
 
 .token-hint {
   font-size: 12px;
@@ -84,15 +84,15 @@
   gap: 8px;
   margin-top: 16px;
   padding: 14px 18px;
-  background: var(--accent-blue-soft);
-  border: 1px solid rgba(14, 116, 144, 0.16);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
   border-radius: var(--radius-md);
   font-size: 15px;
-  font-weight: 600;
-  color: var(--accent-blue);
+  font-weight: 700;
+  color: var(--accent-dark);
   transition: all 0.2s;
 }
-.cta:active { transform: scale(0.98); background: rgba(14, 116, 144, 0.14); }
+.cta:active { transform: scale(0.98); background: var(--accent-soft); }
 
 /* ============================================================
    ===== EMPTY STATE ==========================================
@@ -111,8 +111,8 @@
 .hint-bar {
   margin-bottom: 14px;
   padding: 14px 18px;
-  background: var(--accent-blue-soft);
-  border: 1px solid rgba(14, 116, 144, 0.12);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -120,4 +120,4 @@
 }
 .hint-bar .icon { font-size: 20px; flex-shrink: 0; }
 .hint-bar .text { font-size: 13px; color: var(--text-secondary); font-weight: 500; line-height: 1.4; flex: 1; }
-.hint-bar .text .hl { color: var(--accent-blue); font-weight: 600; }
+.hint-bar .text .hl { color: var(--accent-dark); font-weight: 600; }
