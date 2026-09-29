@@ -3,7 +3,7 @@ import * as pathTab from './tabs/path.js';
 import * as portfolioTab from './tabs/portfolio.js';
 import * as mirrorTab from './tabs/mirror.js';
 import * as journalTab from './tabs/journal.js';
-import * as meTab from './tabs/me.js';
+import * as profileTab from './tabs/profile.js';
 
 // ============================================================
 // ===== РЕГИСТРАЦИЯ ВКЛАДОК ==================================
@@ -13,7 +13,7 @@ const TABS = {
   'portfolio': portfolioTab,
   'mirror':    mirrorTab,
   'journal':   journalTab,
-  'me':        meTab
+  'me':        profileTab
 };
 
 // ============================================================
@@ -24,7 +24,7 @@ const TABS = {
 window.kompasRefreshAll = () => {
   const map = {
     'tab-path':      pathTab,
-    'tab-me':        meTab,
+    'tab-me':        profileTab,
     'tab-mirror':    mirrorTab,
     'tab-journal':   journalTab
   };
