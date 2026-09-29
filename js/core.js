@@ -394,7 +394,7 @@ window.addEventListener('load', () => moveIndicator(currentTab));
 // ============================================================
 // ===== STICKY HEADER (сжатие при скролле) ===================
 // ============================================================
-const SCROLL_THRESHOLD = 100;
+const SCROLL_THRESHOLD = 80;
 let headerTicking = false;
 
 function lerp(from, to, t) {
