@@ -658,6 +658,14 @@
   -webkit-user-select: text;
 }
 
+/* ----- Аватар в шапке с фото ----- */
+.header .avatar.has-photo {
+  color: transparent;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* ----- PRO card ----- */
 .pro-card {
   position: relative;
