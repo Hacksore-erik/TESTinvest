@@ -12,7 +12,7 @@ export function template() {
           <h1>Журнал</h1>
           <span class="alfa-badge">DEV</span>
         </div>
-        <div class="avatar">ЭМ</div>
+        <div class="avatar">И</div>
       </div>
       <div class="subtitle">Дневник решений · не список сделок</div>
     </div>
