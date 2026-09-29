@@ -18,7 +18,7 @@ export function template() {
           <h1>Портфель</h1>
           <span class="alfa-badge">DEV</span>
         </div>
-        <div class="avatar">ЭМ</div>
+        <div class="avatar">И</div>
       </div>
       <div class="subtitle" id="portfolioSubtitle">Подключи токен, чтобы увидеть свой портфель</div>
     </div>
