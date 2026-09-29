@@ -137,7 +137,7 @@ body::before {
 
 /* Отступ под fixed-шапку — контент начинается ниже */
 .tab-content {
-  padding-top: calc(env(safe-area-inset-top, 14px) + 88px);
+  padding-top: calc(env(safe-area-inset-top, 14px) + 93px);
 }
 
 /* ============================================================
@@ -341,7 +341,7 @@ body::before {
   .header h1 { font-size: 30px; }
   .container { padding: 0 14px; }
   .card-hero { padding: 22px 20px; }
-  .tab-content { padding-top: calc(env(safe-area-inset-top, 14px) + 82px); }
+  .tab-content { padding-top: calc(env(safe-area-inset-top, 14px) + 87px); }
 }
 /* ============================================================
    ===== ЗАПРЕТ ЗУМА, ВЫДЕЛЕНИЯ И КОПИРОВАНИЯ =================
