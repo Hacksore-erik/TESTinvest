@@ -53,12 +53,13 @@ a { color: inherit; text-decoration: none; }
   --text-tertiary: rgba(29, 29, 31, 0.38);
 
   /* ===== РОЛЬ 1: СТРУКТУРА — серо-синий ===== */
+  --structure: #3B4A5C;
   --accent-blue: #3B4A5C;
   --accent-blue-soft: rgba(59, 74, 92, 0.10);
   --accent-blue-dark: #2A3645;
   --accent-blue-border: rgba(59, 74, 92, 0.20);
   --accent-blue-glow: rgba(59, 74, 92, 0.22);
-
+  
   /* ===== РОЛЬ 2: АКЦЕНТ UI — морской тил ===== */
   --accent: #3FA88B;
   --accent-dark: #2E7F6B;
