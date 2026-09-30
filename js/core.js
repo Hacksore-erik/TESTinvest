@@ -606,4 +606,4 @@ initGlobalHandlers();
 // ============================================================
 // ===== INIT GLOBAL AVATAR ===================================
 // ============================================================
-applyGlobalAvatar();
+window.kompasApplyAvatar = applyGlobalAvatar;
