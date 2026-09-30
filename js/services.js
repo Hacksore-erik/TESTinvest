@@ -1,7 +1,7 @@
 import { state, parseMoney } from './core.js';
 
 // ============================================================
-// ===== HELPERS — определение типов операций =================
+// ===== HELPERS ==============================================
 // ============================================================
 function isBuy(op) {
   const t = op.type;
@@ -49,7 +49,6 @@ function isCoupon(op) {
 function parseOpDate(dateStr) {
   if (!dateStr) return null;
 
-  // Формат ДД.ММ.ГГГГ
   if (dateStr.indexOf('.') !== -1 && dateStr.indexOf('T') === -1) {
     const parts = dateStr.split('.');
     if (parts.length === 3) {
@@ -61,19 +60,16 @@ function parseOpDate(dateStr) {
     }
   }
 
-  // ISO с микросекундами: обрезаем до 3 знаков
   let normalized = dateStr;
   const dotIndex = dateStr.indexOf('.');
   if (dotIndex !== -1) {
     const beforeDot = dateStr.slice(0, dotIndex);
     const afterDot = dateStr.slice(dotIndex + 1);
-
     let msEnd = afterDot.length;
     for (let i = 0; i < afterDot.length; i++) {
       const ch = afterDot[i];
       if (ch === 'Z' || ch === '+' || ch === '-') { msEnd = i; break; }
     }
-
     const ms = afterDot.slice(0, msEnd).slice(0, 3);
     const rest = afterDot.slice(msEnd);
     normalized = beforeDot + '.' + (ms || '0') + rest;
@@ -94,7 +90,7 @@ function getTimestamp(op) {
 }
 
 // ============================================================
-// ===== FIFO АНАЛИЗ ==========================================
+// ===== FIFO =================================================
 // ============================================================
 function computeFIFO(operations) {
   const queues = {};
@@ -155,7 +151,7 @@ function computeFIFO(operations) {
 }
 
 // ============================================================
-// ===== TAX SERVICE (2026) ===================================
+// ===== TAX ==================================================
 // ============================================================
 export function calculateTax(operations, year = null) {
   let dividendIncome = 0, couponIncome = 0, realizedProfit = 0, commissions = 0;
@@ -184,9 +180,9 @@ export function calculateTax(operations, year = null) {
 }
 
 // ============================================================
-// ===== MIRROR SERVICE =======================================
+// ===== MIRROR ===============================================
 // ============================================================
-export function analyzeMirror О(operations, year = null) {
+export function analyzeMirror(operations, year = null) {
   const result = {
     // Диспозиция (FIFO P&L)
     sells: 0,
@@ -196,7 +192,7 @@ export function analyzeMirror О(operations, year = null) {
     unprofitableCount: 0,
     unprofitableSum: 0,
     totalPnl: 0,
-    //вертрейдинг
+    // Овертрейдинг
     tradesPerYear: 0,
     commissionsTotal: 0,
     // Концентрация
@@ -216,15 +212,14 @@ export function analyzeMirror О(operations, year = null) {
     unprofitableShare: null
   };
 
-  // Фильтр по году
   const yearOps = year === null
     ? operations
     : operations.filter(op => getYear(op) === year);
 
-  // ----- FIFO (один раз на всё) -----
+  // ----- FIFO один раз -----
   const { holdDays, pnls } = computeFIFO(yearOps);
 
-  // ----- Диспозиция (на основе FIFO P&L) -----
+  // ----- Диспозиция по FIFO -----
   const sells = yearOps.filter(isSell);
   result.sells = sells.length;
 
@@ -260,7 +255,7 @@ export function analyzeMirror О(operations, year = null) {
     (sum, op) => sum + Math.abs(parseMoney(op.payment)), 0
   );
 
-  // ----- Концентрация (по текущему портфелю, год не влияет) -----
+  // ----- Концентрация -----
   if (state.portfolio) {
     const positions = (state.portfolio.positions || [])
       .map(p => ({ value: parseMoney(p.quantity) * parseMoney(p.currentPrice) }))
@@ -272,7 +267,7 @@ export function analyzeMirror О(operations, year = null) {
     }
   }
 
-  // ----- Дни роста / падения -----
+  // ----- Дни -----
   const daily = {};
   yearOps.forEach(op => {
     const d = parseOpDate(op.date);
@@ -316,7 +311,7 @@ export function analyzeMirror О(operations, year = null) {
 }
 
 // ============================================================
-// ===== JOURNAL SERVICE ======================================
+// ===== JOURNAL ==============================================
 // ============================================================
 export const OP_TYPES = {
   1: 'Покупка', 2: 'Продажа', 5: 'Дивиденды',
