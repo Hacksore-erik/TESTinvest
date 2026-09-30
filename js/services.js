@@ -1,284 +1,360 @@
-import { state, formatRub } from '../core.js';
-import { analyzeMirror, calculateTax } from '../services.js';
+import { state, parseMoney } from './core.js';
 
 // ============================================================
-// ===== TEMPLATE =============================================
+// ===== HELPERS — определение типов операций =================
 // ============================================================
-export function template() {
-  const year = state.mirrorYear || 2026;
-  const years = [2026, 2025, 2024];
+function isBuy(op) {
+  const t = op.type;
+  return t === 1
+    || t === 'OPERATION_TYPE_BUY'
+    || t === 'Покупка ценных бумаг'
+    || t === 'Покупка';
+}
 
-  return `
-    <div class="header">
-      <div class="header-top">
-        <div class="header-title-wrap">
-          <h1>Зеркало</h1>
-          <span class="alfa-badge">DEV</span>
-        </div>
-        <div class="avatar">И</div>
-      </div>
-      <div class="subtitle">Честная картина твоего поведения</div>
-    </div>
+function isSell(op) {
+  const t = op.type;
+  return t === 2
+    || t === 'OPERATION_TYPE_SELL'
+    || t === 'Продажа ценных бумаг'
+    || t === 'Продажа';
+}
 
-    <div class="container">
-      <div class="hint-bar fade-up">
-        <div class="icon">🪞</div>
-        <div class="text">Это анализ твоего поведения.</div>
-      </div>
+function isFee(op) {
+  const t = op.type;
+  return t === 8
+    || t === 'OPERATION_TYPE_FEE'
+    || t === 'Удержание комиссии за операцию'
+    || t === 'Комиссия';
+}
 
-      <div class="year-row fade-up">
-        <div class="year-label">Период</div>
-        <div class="year-select-wrap">
-          <select class="year-select" id="mirrorYearSelect">
-            ${years.map(y => `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`).join('')}
-          </select>
-        </div>
-      </div>
+function isDividend(op) {
+  const t = op.type;
+  return t === 5
+    || t === 'OPERATION_TYPE_DIVIDEND'
+    || t === 'Выплата дивидендов'
+    || t === 'Дивиденды';
+}
 
-      <div class="card card-neutral fade-up">
-        <div class="mirror-title">Ты рано фиксируешь прибыль и долго держишь убытки</div>
-        <div class="row"><span class="lbl">Прибыльных сделок</span><span class="val green" id="profitableRow">—</span></div>
-        <div class="row"><span class="lbl">Убыточных сделок</span><span class="val red" id="unprofitableRow">—</span></div>
-        <div class="cost-total">
-          <span class="lbl" id="totalDealsLabel">Итого</span>
-          <span class="val" id="totalPnl" style="color: var(--text-primary);">—</span>
-        </div>
-        <div class="mirror-footer" id="dispositionFooter">Подключи токен, чтобы увидеть свои паттерны.</div>
-      </div>
-
-      <div class="card card-neutral fade-up">
-        <div class="mirror-title">Сколько ты держишь бумаги</div>
-        <div class="row"><span class="lbl">Среднее время удержания</span><span class="val" id="avgHoldDays">—</span></div>
-        <div class="row"><span class="lbl">Самая короткая</span><span class="val" id="minHoldDays">—</span></div>
-        <div class="row"><span class="lbl">Самая долгая</span><span class="val" id="maxHoldDays">—</span></div>
-        <div class="mirror-footer" id="holdingFooter">Подключи токен для анализа.</div>
-      </div>
-
-      <div class="card card-neutral fade-up">
-        <div class="mirror-title">Прибыльные и убыточные сделки</div>
-        <div class="row"><span class="lbl">Прибыльные сделки</span><span class="val green" id="profitableShare">—</span></div>
-        <div class="row"><span class="lbl">Убыточные сделки</span><span class="val red" id="unprofitableShare">—</span></div>
-        <div class="mirror-footer" id="winRateFooter">Подключи токен для анализа.</div>
-      </div>
-
-      <div class="card card-neutral fade-up">
-        <div class="mirror-title">Ты слишком много торгуешь</div>
-        <div class="row"><span class="lbl">Сделок за год</span><span class="val" id="tradesCount">—</span></div>
-        <div class="row"><span class="lbl">Комиссии за год</span><span class="val yellow" id="commissionTotal">—</span></div>
-        <div class="mirror-footer" id="overtradingFooter">Подключи токен для анализа.</div>
-      </div>
-
-      <div class="card card-neutral fade-up">
-        <div class="mirror-title">Ты держишь яйца в двух корзинах</div>
-        <div class="row"><span class="lbl">Топ-2 бумаги</span><span class="val yellow" id="top2Share">—</span></div>
-        <div class="row"><span class="lbl">Топ-5 бумаг</span><span class="val" id="top5Share">—</span></div>
-        <div class="mirror-footer" id="concentrationFooter">Подключи токен для анализа.</div>
-      </div>
-
-      <div class="card card-neutral fade-up">
-        <div class="mirror-title">Ты чаще проверяешь портфель, когда он падает</div>
-        <div class="row"><span class="lbl">Сделок в дни роста</span><span class="val" id="checksGrowth">—</span></div>
-        <div class="row"><span class="lbl">Сделок в дни падения</span><span class="val red" id="checksFall">—</span></div>
-        <div class="mirror-footer" id="checkingPatternFooter">Подключи токен, чтобы увидеть анализ твоих операций.</div>
-      </div>
-
-      <div class="card card-red fade-up">
-        <div class="section-title red">Цена твоих решений за год</div>
-        <div class="row"><span class="lbl">Комиссии</span><span class="val" id="costCommissions">—</span></div>
-        <div class="row"><span class="lbl">Налог</span><span class="val" id="costTax">—</span></div>
-        <div class="row"><span class="lbl">Упущено для цели</span><span class="val" id="costMissed">—</span></div>
-        <div class="cost-total">
-          <span class="lbl">Итого — цена решений</span>
-          <span class="val" id="costTotal">—</span>
-        </div>
-      </div>
-    </div>
-  `;
+function isCoupon(op) {
+  const t = op.type;
+  return t === 6
+    || t === 'OPERATION_TYPE_COUPON'
+    || t === 'Выплата купонов'
+    || t === 'Купоны';
 }
 
 // ============================================================
-// ===== MOUNT ================================================
+// ===== ДАТЫ =================================================
 // ============================================================
-export function mount(root) {
-  root.innerHTML = template();
+function parseOpDate(dateStr) {
+  if (!dateStr) return null;
 
-  const select = root.querySelector('#mirrorYearSelect');
-  if (select) {
-    select.addEventListener('change', (e) => {
-      state.mirrorYear = parseInt(e.target.value);
-      render(root);
+  // Формат ДД.ММ.ГГГГ
+  if (dateStr.indexOf('.') !== -1 && dateStr.indexOf('T') === -1) {
+    const parts = dateStr.split('.');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1;
+      const year = parseInt(parts[2]);
+      const d = new Date(year, month, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
+  }
+
+  // ISO с микросекундами: обрезаем до 3 знаков
+  let normalized = dateStr;
+  const dotIndex = dateStr.indexOf('.');
+  if (dotIndex !== -1) {
+    const beforeDot = dateStr.slice(0, dotIndex);
+    const afterDot = dateStr.slice(dotIndex + 1);
+
+    let msEnd = afterDot.length;
+    for (let i = 0; i < afterDot.length; i++) {
+      const ch = afterDot[i];
+      if (ch === 'Z' || ch === '+' || ch === '-') { msEnd = i; break; }
+    }
+
+    const ms = afterDot.slice(0, msEnd).slice(0, 3);
+    const rest = afterDot.slice(msEnd);
+    normalized = beforeDot + '.' + (ms || '0') + rest;
+  }
+
+  const d = new Date(normalized);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function getYear(op) {
+  const d = parseOpDate(op.date);
+  return d ? d.getFullYear() : null;
+}
+
+function getTimestamp(op) {
+  const d = parseOpDate(op.date);
+  return d ? d.getTime() : 0;
+}
+
+// ============================================================
+// ===== FIFO АНАЛИЗ ==========================================
+// ============================================================
+function computeFIFO(operations) {
+  const queues = {};
+  const holdDays = [];
+  const pnls = [];
+
+  const sorted = [...operations].sort((a, b) => {
+    const ta = getTimestamp(a);
+    const tb = getTimestamp(b);
+    if (ta !== tb) return ta - tb;
+    const priority = (op) => (isBuy(op) ? 0 : 1);
+    return priority(a) - priority(b);
+  });
+
+  sorted.forEach(op => {
+    const figi = op.figi || op.instrumentUid;
+    if (!figi) return;
+
+    const qty = parseMoney(op.quantity);
+    const price = parseMoney(op.price);
+    const ts = getTimestamp(op);
+
+    if (qty <= 0) return;
+
+    if (isBuy(op)) {
+      if (!queues[figi]) queues[figi] = [];
+      queues[figi].push({ qty, price, date: ts });
+      return;
+    }
+
+    if (isSell(op)) {
+      if (!queues[figi] || queues[figi].length === 0) return;
+
+      let remaining = qty;
+      while (remaining > 0 && queues[figi].length > 0) {
+        const lot = queues[figi][0];
+        const take = Math.min(lot.qty, remaining);
+
+        if (lot.date > 0 && ts > 0) {
+          const days = Math.round((ts - lot.date) / (1000 * 60 * 60 * 24));
+          if (days >= 0) {
+            holdDays.push({ figi, days });
+          }
+        }
+
+        const pnl = (price - lot.price) * take;
+        pnls.push({ figi, pnl });
+
+        lot.qty -= take;
+        remaining -= take;
+
+        if (lot.qty <= 0.000001) queues[figi].shift();
+      }
+    }
+  });
+
+  return { holdDays, pnls };
+}
+
+// ============================================================
+// ===== TAX SERVICE (2026) ===================================
+// ============================================================
+export function calculateTax(operations, year = null) {
+  let dividendIncome = 0, couponIncome = 0, realizedProfit = 0, commissions = 0;
+
+  operations.forEach(op => {
+    if (year !== null && getYear(op) !== year) return;
+
+    const payment = parseMoney(op.payment);
+
+    if (isDividend(op)) dividendIncome += Math.abs(payment);
+    else if (isCoupon(op)) couponIncome += Math.abs(payment);
+    else if (isSell(op)) { if (payment > 0) realizedProfit += payment; }
+    else if (isFee(op)) commissions += Math.abs(payment);
+  });
+
+  const totalIncome = dividendIncome + couponIncome + realizedProfit;
+  const TH1 = 2400000, TH2 = 5000000, TH3 = 20000000;
+  let tax = 0, activeBracket = 13;
+
+  if (totalIncome <= TH1) { tax = totalIncome * 0.13; activeBracket = 13; }
+  else if (totalIncome <= TH2) { tax = TH1 * 0.13 + (totalIncome - TH1) * 0.15; activeBracket = 15; }
+  else if (totalIncome <= TH3) { tax = TH1 * 0.13 + (TH2 - TH1) * 0.15 + (totalIncome - TH2) * 0.18; activeBracket = 18; }
+  else { tax = TH1 * 0.13 + (TH2 - TH1) * 0.15 + (TH3 - TH2) * 0.18 + (totalIncome - TH3) * 0.20; activeBracket = 20; }
+
+  return { totalIncome, tax, activeBracket, commissions, dividendIncome, couponIncome, realizedProfit };
+}
+
+// ============================================================
+// ===== MIRROR SERVICE =======================================
+// ============================================================
+export function analyzeMirror О(operations, year = null) {
+  const result = {
+    // Диспозиция (FIFO P&L)
+    sells: 0,
+    totalDeals: 0,
+    profitableCount: 0,
+    profitableSum: 0,
+    unprofitableCount: 0,
+    unprofitableSum: 0,
+    totalPnl: 0,
+    //вертрейдинг
+    tradesPerYear: 0,
+    commissionsTotal: 0,
+    // Концентрация
+    top2Share: 0,
+    top5Share: 0,
+    // Дни
+    growthDays: 0,
+    fallDays: 0,
+    // Время удержания
+    avgHoldDays: null,
+    minHoldDays: null,
+    maxHoldDays: null,
+    minHoldFigi: null,
+    maxHoldFigi: null,
+    // Win rate
+    profitableShare: null,
+    unprofitableShare: null
+  };
+
+  // Фильтр по году
+  const yearOps = year === null
+    ? operations
+    : operations.filter(op => getYear(op) === year);
+
+  // ----- FIFO (один раз на всё) -----
+  const { holdDays, pnls } = computeFIFO(yearOps);
+
+  // ----- Диспозиция (на основе FIFO P&L) -----
+  const sells = yearOps.filter(isSell);
+  result.sells = sells.length;
+
+  if (pnls.length > 0) {
+    let profitableCount = 0;
+    let profitableSum = 0;
+    let unprofitableCount = 0;
+    let unprofitableSum = 0;
+
+    pnls.forEach(p => {
+      if (p.pnl >= 0) {
+        profitableCount++;
+        profitableSum += p.pnl;
+      } else {
+        unprofitableCount++;
+        unprofitableSum += Math.abs(p.pnl);
+      }
     });
-  }
 
-  render(root);
-}
-
-// ============================================================
-// ===== RENDER ===============================================
-// ============================================================
-export function render(root) {
-  const year = state.mirrorYear || 2026;
-  const m = analyzeMirror(state.operations, year);
-
-  // ----- Диспозиция -----
-  renderDisposition(root, m, year);
-
-  // ----- Время удержания -----
-  const avgHoldEl = root.querySelector('#avgHoldDays');
-  const minHoldEl = root.querySelector('#minHoldDays');
-  const maxHoldEl = root.querySelector('#maxHoldDays');
-  const holdingFooter = root.querySelector('#holdingFooter');
-
-  if (m.avgHoldDays !== null) {
-    avgHoldEl.textContent = formatDays(m.avgHoldDays);
-    minHoldEl.textContent = m.minHoldDays !== null
-      ? formatHold(m.minHoldFigi, m.minHoldDays)
-      : '—';
-    maxHoldEl.textContent = m.maxHoldDays !== null
-      ? formatHold(m.maxHoldFigi, m.maxHoldDays)
-      : '—';
-
-    holdingFooter.innerHTML = m.avgHoldDays < 30
-      ? `Средний инвестор держит бумаги <span class="hl">6–12 месяцев</span>. Твои сделки — короткие.`
-      : m.avgHoldDays < 180
-        ? `Ты держишь бумаги <span class="hl">умеренно</span>.`
-        : `Ты держишь бумаги <span class="hl">долго</span> — хороший признак.`;
-  } else {
-    avgHoldEl.textContent = '—';
-    minHoldEl.textContent = '—';
-    maxHoldEl.textContent = '—';
-    holdingFooter.innerHTML = `Нет данных за ${year} год.`;
-  }
-
-  // ----- Прибыльные / убыточные -----
-  const profEl = root.querySelector('#profitableShare');
-  const unprofEl = root.querySelector('#unprofitableShare');
-  const winFooter = root.querySelector('#winRateFooter');
-
-  if (m.profitableShare !== null) {
-    profEl.textContent = m.profitableShare.toFixed(0) + '%';
-    unprofEl.textContent = m.unprofitableShare.toFixed(0) + '%';
-
-    winFooter.innerHTML = m.profitableShare > 60
-      ? `Большинство твоих сделок — <span class="hl">в плюс</span>.`
-      : m.profitableShare > 40
-        ? `Примерно половина сделок в плюс. Это <span class="hl">норма</span>.`
-        : `Меньше <span class="hl">50%</span> прибыльных сделок — обычно следствие частой торговли.`;
-  } else {
-    profEl.textContent = '—';
-    unprofEl.textContent = '—';
-    winFooter.innerHTML = `Нет данных за ${year} год.`;
+    result.totalDeals = pnls.length;
+    result.profitableCount = profitableCount;
+    result.profitableSum = profitableSum;
+    result.unprofitableCount = unprofitableCount;
+    result.unprofitableSum = unprofitableSum;
+    result.totalPnl = profitableSum - unprofitableSum;
   }
 
   // ----- Овертрейдинг -----
-  root.querySelector('#tradesCount').textContent = m.tradesPerYear;
-  root.querySelector('#commissionTotal').textContent = formatRub(m.commissionsTotal);
-  root.querySelector('#overtradingFooter').innerHTML = m.tradesPerYear > 50
-    ? `<span class="hl">${m.tradesPerYear} операций</span> за ${year} год. Средний инвестор совершает 40.`
-    : m.tradesPerYear > 0
-      ? `${m.tradesPerYear} операций за ${year} год. Это в пределах нормы.`
-      : `Нет операций за ${year} год.`;
+  result.tradesPerYear = yearOps.length;
 
-  // ----- Концентрация -----
+  const feeOps = yearOps.filter(isFee);
+  result.commissionsTotal = feeOps.reduce(
+    (sum, op) => sum + Math.abs(parseMoney(op.payment)), 0
+  );
+
+  // ----- Концентрация (по текущему портфелю, год не влияет) -----
   if (state.portfolio) {
-    root.querySelector('#top2Share').textContent = m.top2Share.toFixed(0) + '%';
-    root.querySelector('#top5Share').textContent = m.top5Share.toFixed(0) + '%';
-
-    const risk = m.top2Share > 40 ? 'высокая' : m.top2Share > 25 ? 'умеренная' : 'низкая';
-    root.querySelector('#concentrationFooter').innerHTML =
-      `Концентрация топ-2: <span class="hl">${m.top2Share.toFixed(0)}%</span>. Риск: ${risk}.`;
-  }
-
-  // ----- Дни падения -----
-  root.querySelector('#checksGrowth').textContent = m.growthDays + ' дней';
-  root.querySelector('#checksFall').textContent = m.fallDays + ' дней';
-
-  if (m.growthDays + m.fallDays >= 5) {
-    const ratio = m.fallDays / Math.max(m.growthDays, 1);
-    root.querySelector('#checkingPatternFooter').innerHTML = ratio > 1.5
-      ? `Ты активнее в дни падения в <span class="hl">${ratio.toFixed(1)} раз</span>. Это эмоциональная реакция.`
-      : `Ты сохраняешь спокойствие в дни падения. Хороший признак.`;
-  } else {
-    root.querySelector('#checkingPatternFooter').innerHTML =
-      `Недостаточно данных за ${year} год. Нужно минимум <span class="hl">5 дней</span> с операциями.`;
-  }
-
-  // ----- Цена решений -----
-  renderCost(root, year);
-}
-
-// ============================================================
-// ===== БЛОК 1 — ДИСПОЗИЦИЯ ==================================
-// ============================================================
-function renderDisposition(root, m, year) {
-  const profRow = root.querySelector('#profitableRow');
-  const unprofRow = root.querySelector('#unprofitableRow');
-  const totalPnlEl = root.querySelector('#totalPnl');
-  const totalLabelEl = root.querySelector('#totalDealsLabel');
-  const footer = root.querySelector('#dispositionFooter');
-
-  if (m.totalDeals > 0) {
-    // Прибыльные
-    if (m.profitableCount > 0) {
-      profRow.textContent = `${m.profitableCount} на +${formatRub(m.profitableSum)}`;
-    } else {
-      profRow.textContent = '0';
+    const positions = (state.portfolio.positions || [])
+      .map(p => ({ value: parseMoney(p.quantity) * parseMoney(p.currentPrice) }))
+      .sort((a, b) => b.value - a.value);
+    const total = positions.reduce((sum, p) => sum + p.value, 0);
+    if (total > 0) {
+      result.top2Share = positions.slice(0, 2).reduce((s, p) => s + p.value, 0) / total * 100;
+      result.top5Share = positions.slice(0, 5).reduce((s, p) => s + p.value, 0) / total * 100;
     }
-
-    // Убыточные
-    if (m.unprofitableCount > 0) {
-      unprofRow.textContent = `${m.unprofitableCount} на −${formatRub(m.unprofitableSum)}`;
-    } else {
-      unprofRow.textContent = '0';
-    }
-
-    // Итого
-    totalLabelEl.textContent = `Итого ${m.totalDeals} сделок`;
-    const pnlSign = m.totalPnl >= 0 ? '+' : '−';
-    totalPnlEl.textContent = pnlSign + formatRub(Math.abs(m.totalPnl));
-    totalPnlEl.style.color = m.totalPnl >= 0
-      ? 'var(--accent-green)'
-      : 'var(--accent-red)';
-
-    // Футер
-    footer.innerHTML = `На основе <span class="hl">${m.totalDeals} сделок</span> за ${year} год.`;
-  } else {
-    profRow.textContent = '—';
-    unprofRow.textContent = '—';
-    totalLabelEl.textContent = 'Итого 0 сделок';
-    totalPnlEl.textContent = '—';
-    totalPnlEl.style.color = 'var(--text-primary)';
-    footer.innerHTML = `Нет сделок за ${year} год.`;
   }
+
+  // ----- Дни роста / падения -----
+  const daily = {};
+  yearOps.forEach(op => {
+    const d = parseOpDate(op.date);
+    if (!d) return;
+    const day = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    if (!daily[day]) daily[day] = { volume: 0 };
+    daily[day].volume += parseMoney(op.payment);
+  });
+  Object.keys(daily).forEach(d => {
+    if (daily[d].volume >= 0) result.growthDays++;
+    else result.fallDays++;
+  });
+
+  // ----- Время удержания -----
+  if (holdDays.length > 0) {
+    const days = holdDays.map(h => h.days);
+    result.avgHoldDays = days.reduce((a, b) => a + b, 0) / days.length;
+
+    let minItem = holdDays[0];
+    let maxItem = holdDays[0];
+    holdDays.forEach(h => {
+      if (h.days < minItem.days) minItem = h;
+      if (h.days > maxItem.days) maxItem = h;
+    });
+    result.minHoldDays = minItem.days;
+    result.maxHoldDays = maxItem.days;
+    result.minHoldFigi = minItem.figi;
+    result.maxHoldFigi = maxItem.figi;
+  }
+
+  // ----- Win rate -----
+  if (pnls.length > 0) {
+    const profitable = pnls.filter(p => p.pnl >= 0).length;
+    const unprofitable = pnls.filter(p => p.pnl < 0).length;
+    const total = pnls.length;
+    result.profitableShare = (profitable / total) * 100;
+    result.unprofitableShare = (unprofitable / total) * 100;
+  }
+
+  return result;
 }
 
 // ============================================================
-// ===== ЦЕНА РЕШЕНИЙ =========================================
+// ===== JOURNAL SERVICE ======================================
 // ============================================================
-function renderCost(root, year) {
-  const taxData = calculateTax(state.operations, year);
+export const OP_TYPES = {
+  1: 'Покупка', 2: 'Продажа', 5: 'Дивиденды',
+  6: 'Купоны', 7: 'Налог', 8: 'Комиссия'
+};
 
-  root.querySelector('#costCommissions').textContent = formatRub(taxData.commissions);
-  root.querySelector('#costTax').textContent = formatRub(taxData.tax);
-  root.querySelector('#costMissed').textContent = formatRub(state.totalValue * 0.05);
-  root.querySelector('#costTotal').textContent =
-    formatRub(taxData.commissions + taxData.tax + state.totalValue * 0.05);
+export function analyzeJournal(operations) {
+  const buys = operations.filter(isBuy);
+  const sells = operations.filter(isSell);
+  const divs = operations.filter(op => isDividend(op) || isCoupon(op));
+  return {
+    total: operations.length,
+    buys: buys.length,
+    sells: sells.length,
+    dividends: divs.length
+  };
 }
 
 // ============================================================
-// ===== HELPERS ==============================================
+// ===== INSIGHT ==============================================
 // ============================================================
-function formatDays(days) {
-  const d = Math.round(days);
-  if (d === 1) return '1 день';
-  if (d >= 2 && d <= 4) return d + ' дня';
-  return d + ' дней';
-}
+export function generateInsight(operations) {
+  if (!operations.length) {
+    return 'Загрузи токен на вкладке «Портфель», чтобы увидеть персональный инсайт.';
+  }
 
-function formatHold(figi, days) {
-  const dayStr = formatDays(days);
-  const name = (state.instrumentNames && state.instrumentNames[figi]) || null;
+  const now = new Date();
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const recent = operations.filter(op => {
+    const d = parseOpDate(op.date);
+    return d && d > monthAgo;
+  });
 
-  if (!name) return dayStr;
-  return name + ' — ' + dayStr;
+  if (recent.length > 20) {
+    return `За последние 30 дней ты совершил <span class="insight-highlight">${recent.length} операций</span>. Средний инвестор — 12. Больше сделок ≠ лучше результат.`;
+  }
+  if (recent.length > 0) {
+    return `За последние 30 дней ты совершил <span class="insight-highlight">${recent.length} операций</span>. Это в пределах разумного.`;
+  }
+  return `За последние 30 дней ты не совершал операций. Это признак дисциплины.`;
 }
