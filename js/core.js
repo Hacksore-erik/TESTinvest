@@ -86,6 +86,7 @@ export function applyGlobalAvatar() {
   const initial = ((profile.name || 'Инвестор').trim()[0] || 'И').toUpperCase();
 
   document.querySelectorAll('.header .avatar').forEach(el => {
+    // Содержимое
     if (profile.avatar) {
       el.textContent = '';
       el.style.backgroundImage = `url(${profile.avatar})`;
@@ -94,6 +95,12 @@ export function applyGlobalAvatar() {
       el.textContent = initial;
       el.style.backgroundImage = '';
       el.classList.remove('has-photo');
+    }
+
+    // Тап → переход в Профиль (вешаем один раз)
+    if (!el.dataset.navBound) {
+      el.dataset.navBound = '1';
+      el.addEventListener('click', () => switchTab('me'));
     }
   });
 }
