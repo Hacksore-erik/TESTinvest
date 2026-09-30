@@ -5,6 +5,9 @@ import { analyzeMirror, calculateTax } from '../services.js';
 // ===== TEMPLATE =============================================
 // ============================================================
 export function template() {
+  const year = state.mirrorYear || 2026;
+  const years = [2026, 2025, 2024];
+
   return `
     <div class="header">
       <div class="header-top">
@@ -20,14 +23,38 @@ export function template() {
     <div class="container">
       <div class="hint-bar fade-up">
         <div class="icon">🪞</div>
-        <div class="text">Это <span class="hl">не обвинения</span>. Это закономерности, которые стоят тебе денег и времени.</div>
+        <div class="text">Это анализ твоего поведения.</div>
+      </div>
+
+      <div class="year-row fade-up">
+        <div class="year-label">Период</div>
+        <div class="year-select-wrap">
+          <select class="year-select" id="mirrorYearSelect">
+            ${years.map(y => `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`).join('')}
+          </select>
+        </div>
       </div>
 
       <div class="card card-neutral fade-up">
         <div class="mirror-title">Ты рано фиксируешь прибыль и долго держишь убытки</div>
-        <div class="row"><span class="lbl">Средняя прибыль</span><span class="val green" id="avgProfit">—</span></div>
-        <div class="row"><span class="lbl">Средний убыток</span><span class="val red" id="avgLoss">—</span></div>
+        <div class="row"><span class="lbl">Средняя продажа с плюсом</span><span class="val green" id="avgProfit">—</span></div>
+        <div class="row"><span class="lbl">Средняя продажа с минусом</span><span class="val red" id="avgLoss">—</span></div>
         <div class="mirror-footer" id="dispositionFooter">Подключи токен, чтобы увидеть свои паттерны.</div>
+      </div>
+
+      <div class="card card-neutral fade-up">
+        <div class="mirror-title">Сколько ты держишь бумаги</div>
+        <div class="row"><span class="lbl">Среднее время удержания</span><span class="val" id="avgHoldDays">—</span></div>
+        <div class="row"><span class="lbl">Самая короткая</span><span class="val" id="minHoldDays">—</span></div>
+        <div class="row"><span class="lbl">Самая долгая</span><span class="val" id="maxHoldDays">—</span></div>
+        <div class="mirror-footer" id="holdingFooter">Подключи токен для анализа.</div>
+      </div>
+
+      <div class="card card-neutral fade-up">
+        <div class="mirror-title">Прибыльные и убыточные сделки</div>
+        <div class="row"><span class="lbl">Прибыльные сделки</span><span class="val green" id="profitableShare">—</span></div>
+        <div class="row"><span class="lbl">Убыточные сделки</span><span class="val red" id="unprofitableShare">—</span></div>
+        <div class="mirror-footer" id="winRateFooter">Подключи токен для анализа.</div>
       </div>
 
       <div class="card card-neutral fade-up">
@@ -70,6 +97,15 @@ export function template() {
 // ============================================================
 export function mount(root) {
   root.innerHTML = template();
+
+  const select = root.querySelector('#mirrorYearSelect');
+  if (select) {
+    select.addEventListener('change', (e) => {
+      state.mirrorYear = parseInt(e.target.value);
+      render(root);
+    });
+  }
+
   render(root);
 }
 
@@ -77,28 +113,85 @@ export function mount(root) {
 // ===== RENDER ===============================================
 // ============================================================
 export function render(root) {
-  const m = analyzeMirror(state.operations);
+  const year = state.mirrorYear || 2026;
+  const m = analyzeMirror(state.operations, year);
 
-  // Диспозиция
+  // ----- Диспозиция -----
   if (m.sells > 0) {
     root.querySelector('#avgProfit').textContent = formatRub(m.avgProfit);
     root.querySelector('#avgLoss').textContent = '−' + formatRub(m.avgLoss);
     root.querySelector('#dispositionFooter').innerHTML =
-      `На основе <span class="hl">${m.sells} продаж</span> за период. ${
-        m.avgLoss > m.avgProfit
-          ? 'Ты фиксируешь убытки больше, чем прибыль.'
-          : 'У тебя положительное соотношение прибыли и убытков.'
-      }`;
+      `На основе <span class="hl">${m.sells} продаж</span> за ${year} год.`;
+  } else {
+    root.querySelector('#avgProfit').textContent = '—';
+    root.querySelector('#avgLoss').textContent = '—';
+    root.querySelector('#dispositionFooter').innerHTML =
+      `Нет продаж за ${year} год.`;
   }
 
-  // Овертрейдинг
+  // ----- Время удержания -----
+  const avgHoldEl = root.querySelector('#avgHoldDays');
+  const minHoldEl = root.querySelector('#minHoldDays');
+  const maxHoldEl = root.querySelector('#maxHoldDays');
+  const holdingFooter = root.querySelector('#holdingFooter');
+
+  if (m.avgHoldDays !== null) {
+    avgHoldEl.textContent = formatDays(m.avgHoldDays);
+
+    if (m.minHoldDays !== null) {
+      minHoldEl.textContent = formatHold(m.minHoldFigi, m.minHoldDays);
+    } else {
+      minHoldEl.textContent = '—';
+    }
+
+    if (m.maxHoldDays !== null) {
+      maxHoldEl.textContent = formatHold(m.maxHoldFigi, m.maxHoldDays);
+    } else {
+      maxHoldEl.textContent = '—';
+    }
+
+    holdingFooter.innerHTML = m.avgHoldDays < 30
+      ? `Средний инвестор держит бумаги <span class="hl">6–12 месяцев</span>. Твои сделки — короткие.`
+      : m.avgHoldDays < 180
+        ? `Ты держишь бумаги <span class="hl">умеренно</span>.`
+        : `Ты держишь бумаги <span class="hl">долго</span> — хороший признак.`;
+  } else {
+    avgHoldEl.textContent = '—';
+    minHoldEl.textContent = '—';
+    maxHoldEl.textContent = '—';
+    holdingFooter.innerHTML = `Нет данных за ${year} год.`;
+  }
+
+  // ----- Прибыльные / убыточные -----
+  const profEl = root.querySelector('#profitableShare');
+  const unprofEl = root.querySelector('#unprofitableShare');
+  const winFooter = root.querySelector('#winRateFooter');
+
+  if (m.profitableShare !== null) {
+    profEl.textContent = m.profitableShare.toFixed(0) + '%';
+    unprofEl.textContent = m.unprofitableShare.toFixed(0) + '%';
+
+    winFooter.innerHTML = m.profitableShare > 60
+      ? `Большинство твоих сделок — <span class="hl">в плюс</span>.`
+      : m.profitableShare > 40
+        ? `Примерно половина сделок в плюс. Это <span class="hl">норма</span>.`
+        : `Меньше <span class="hl">50%</span> прибыльных сделок — обычно следствие частой торговли.`;
+  } else {
+    profEl.textContent = '—';
+    unprofEl.textContent = '—';
+    winFooter.innerHTML = `Нет данных за ${year} год.`;
+  }
+
+  // ----- Овертрейдинг -----
   root.querySelector('#tradesCount').textContent = m.tradesPerYear;
   root.querySelector('#commissionTotal').textContent = formatRub(m.commissionsTotal);
   root.querySelector('#overtradingFooter').innerHTML = m.tradesPerYear > 50
-    ? `<span class="hl">${m.tradesPerYear} операций</span> за год. Средний инвестор совершает 40.`
-    : `${m.tradesPerYear} операций за год. Это в пределах нормы.`;
+    ? `<span class="hl">${m.tradesPerYear} операций</span> за ${year} год. Средний инвестор совершает 40.`
+    : m.tradesPerYear > 0
+      ? `${m.tradesPerYear} операций за ${year} год. Это в пределах нормы.`
+      : `Нет операций за ${year} год.`;
 
-  // Концентрация
+  // ----- Концентрация -----
   if (state.portfolio) {
     root.querySelector('#top2Share').textContent = m.top2Share.toFixed(0) + '%';
     root.querySelector('#top5Share').textContent = m.top5Share.toFixed(0) + '%';
@@ -108,7 +201,7 @@ export function render(root) {
       `Концентрация топ-2: <span class="hl">${m.top2Share.toFixed(0)}%</span>. Риск: ${risk}.`;
   }
 
-  // Поведение в дни падения
+  // ----- Дни падения -----
   root.querySelector('#checksGrowth').textContent = m.growthDays + ' дней';
   root.querySelector('#checksFall').textContent = m.fallDays + ' дней';
 
@@ -119,25 +212,40 @@ export function render(root) {
       : `Ты сохраняешь спокойствие в дни падения. Хороший признак.`;
   } else {
     root.querySelector('#checkingPatternFooter').innerHTML =
-      `Недостаточно данных. Нужно минимум <span class="hl">5 дней</span> с операциями.`;
+      `Недостаточно данных за ${year} год. Нужно минимум <span class="hl">5 дней</span> с операциями.`;
   }
 
-  // Цена решений
-  renderCost(root);
+  // ----- Цена решений -----
+  renderCost(root, year);
 }
 
 // ============================================================
 // ===== ЦЕНА РЕШЕНИЙ =========================================
 // ============================================================
-function renderCost(root) {
-  const hasData = state.operations.length > 0 || state.totalValue > 0;
-  if (!hasData) return;
-
-  const taxData = calculateTax(state.operations);
+function renderCost(root, year) {
+  const taxData = calculateTax(state.operations, year);
 
   root.querySelector('#costCommissions').textContent = formatRub(taxData.commissions);
   root.querySelector('#costTax').textContent = formatRub(taxData.tax);
   root.querySelector('#costMissed').textContent = formatRub(state.totalValue * 0.05);
   root.querySelector('#costTotal').textContent =
     formatRub(taxData.commissions + taxData.tax + state.totalValue * 0.05);
+}
+
+// ============================================================
+// ===== HELPERS ==============================================
+// ============================================================
+function formatDays(days) {
+  const d = Math.round(days);
+  if (d === 1) return '1 день';
+  if (d >= 2 && d <= 4) return d + ' дня';
+  return d + ' дней';
+}
+
+function formatHold(figi, days) {
+  const dayStr = formatDays(days);
+  const name = (state.instrumentNames && state.instrumentNames[figi]) || null;
+
+  if (!name) return dayStr;
+  return `${name} — ${dayStr}`;
 }
