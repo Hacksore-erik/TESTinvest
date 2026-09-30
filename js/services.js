@@ -1,25 +1,56 @@
 import { state, parseMoney } from './core.js';
 
 // ============================================================
-// ===== HELPERS ==============================================
+// ===== HELPERS — определение типов операций =================
+// ============================================================
+// T-Invest API возвращает type либо числами (1, 2, 5, 6, 8),
+// либо английскими константами (OPERATION_TYPE_*),
+// либо РУССКИМИ строками ("Продажа ценных бумаг").
+// Поддерживаем все варианты.
 // ============================================================
 function isBuy(op) {
-  return op.type === 1 || op.type === 'OPERATION_TYPE_BUY';
-}
-function isSell(op) {
-  return op.type === 2 || op.type === 'OPERATION_TYPE_SELL';
-}
-function isFee(op) {
-  return op.type === 8 || op.type === 'OPERATION_TYPE_FEE';
-}
-function isDividend(op) {
-  return op.type === 5 || op.type === 'OPERATION_TYPE_DIVIDEND';
-}
-function isCoupon(op) {
-  return op.type === 6 || op.type === 'OPERATION_TYPE_COUPON';
+  const t = op.type;
+  return t === 1
+    || t === 'OPERATION_TYPE_BUY'
+    || t === 'Покупка ценных бумаг'
+    || t === 'Покупка';
 }
 
-// Универсальный парсер даты: поддерживает 'YYYY-MM-DD...' и 'DD.MM.YYYY'
+function isSell(op) {
+  const t = op.type;
+  return t === 2
+    || t === 'OPERATION_TYPE_SELL'
+    || t === 'Продажа ценных бумаг'
+    || t === 'Продажа';
+}
+
+function isFee(op) {
+  const t = op.type;
+  return t === 8
+    || t === 'OPERATION_TYPE_FEE'
+    || t === 'Удержание комиссии за операцию'
+    || t === 'Комиссия';
+}
+
+function isDividend(op) {
+  const t = op.type;
+  return t === 5
+    || t === 'OPERATION_TYPE_DIVIDEND'
+    || t === 'Выплата дивидендов'
+    || t === 'Дивиденды';
+}
+
+function isCoupon(op) {
+  const t = op.type;
+  return t === 6
+    || t === 'OPERATION_TYPE_COUPON'
+    || t === 'Выплата купонов'
+    || t === 'Купоны';
+}
+
+// ============================================================
+// ===== ДАТЫ =================================================
+// ============================================================
 function parseOpDate(dateStr) {
   if (!dateStr) return null;
 
@@ -35,7 +66,7 @@ function parseOpDate(dateStr) {
     }
   }
 
-  // Формат YYYY-MM-DD (ISO)
+  // Формат ISO (YYYY-MM-DDTHH:mm:ss)
   const d = new Date(dateStr);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -53,22 +84,15 @@ function getTimestamp(op) {
 // ============================================================
 // ===== FIFO АНАЛИЗ ==========================================
 // ============================================================
-// Идём по операциям хронологически.
-// Для каждой бумаги держим очередь покупок [{qty, price, date}].
-// При продаже — берём из очереди FIFO, считаем:
-//   - holdDays (sell.date - buy.date)
-//   - pnl ((sell.price - buy.price) * qty)
-// ============================================================
 function computeFIFO(operations) {
-  const queues = {}; // figi -> [{qty, price, date}]
-  const holdDays = []; // { figi, days }
-  const pnls = [];     // { figi, pnl }
+  const queues = {};
+  const holdDays = [];
+  const pnls = [];
 
   const sorted = [...operations].sort((a, b) => {
     const ta = getTimestamp(a);
     const tb = getTimestamp(b);
     if (ta !== tb) return ta - tb;
-    // При одинаковой дате покупка идёт раньше продажи
     const priority = (op) => (isBuy(op) ? 0 : 1);
     return priority(a) - priority(b);
   });
@@ -97,7 +121,6 @@ function computeFIFO(operations) {
         const lot = queues[figi][0];
         const take = Math.min(lot.qty, remaining);
 
-        // Время удержания
         if (lot.date > 0 && ts > 0) {
           const days = Math.round((ts - lot.date) / (1000 * 60 * 60 * 24));
           if (days >= 0) {
@@ -105,7 +128,6 @@ function computeFIFO(operations) {
           }
         }
 
-        // P&L
         const pnl = (price - lot.price) * take;
         pnls.push({ figi, pnl });
 
@@ -158,7 +180,6 @@ export function analyzeMirror(operations, year = null) {
     tradesPerYear: 0, commissionsTotal: 0,
     top2Share: 0, top5Share: 0,
     growthDays: 0, fallDays: 0,
-    // Новые поля
     avgHoldDays: null,
     minHoldDays: null,
     maxHoldDays: null,
@@ -168,7 +189,6 @@ export function analyzeMirror(operations, year = null) {
     unprofitableShare: null
   };
 
-  // Фильтр по году
   const yearOps = year === null
     ? operations
     : operations.filter(op => getYear(op) === year);
@@ -200,7 +220,7 @@ export function analyzeMirror(operations, year = null) {
     (sum, op) => sum + Math.abs(parseMoney(op.payment)), 0
   );
 
-  // ----- Концентрация (по текущему портфелю, год не влияет) -----
+  // ----- Концентрация -----
   if (state.portfolio) {
     const positions = (state.portfolio.positions || [])
       .map(p => ({ value: parseMoney(p.quantity) * parseMoney(p.currentPrice) }))
@@ -226,7 +246,7 @@ export function analyzeMirror(operations, year = null) {
     else result.fallDays++;
   });
 
-  // ----- FIFO: holdDays и PnL -----
+  // ----- FIFO -----
   const { holdDays, pnls } = computeFIFO(yearOps);
 
   if (holdDays.length > 0) {
