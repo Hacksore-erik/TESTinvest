@@ -247,7 +247,7 @@ function formatHold(figi, days) {
 }
 
 // ============================================================
-// ===== ВРЕМЕННЫЙ ДЕБАГ — НОВАЯ ВЕРСИЯ =======================
+// ===== ВРЕМЕННЫЙ ДЕБАГ v5 ===================================
 // ============================================================
 function renderDebug(root) {
   try {
@@ -330,7 +330,23 @@ function renderDebug(root) {
       figiSellCount[figi] = (figiSellCount[figi] || 0) + 1;
     });
 
+    // ---- Проверка сортировки ----
+    const sortedBuys = [...buys].sort((a, b) => {
+      const da = parseOpDate(a.date);
+      const db = parseOpDate(b.date);
+      return (da ? da.getTime() : 0) - (db ? db.getTime() : 0);
+    });
+    const sortedSells = [...sells].sort((a, b) => {
+      const da = parseOpDate(a.date);
+      const db = parseOpDate(b.date);
+      return (da ? da.getTime() : 0) - (db ? db.getTime() : 0);
+    });
+
+    const firstBuy = sortedBuys[0];
+    const firstSell = sortedSells[0];
+
     const dbg = {
+      _version: 'v5-' + Date.now(),
       year: year,
       totalOps: ops.length,
       yearOpsCount: yearOps.length,
@@ -338,21 +354,25 @@ function renderDebug(root) {
       sellsCount: sells.length,
       figiBuyCount: figiBuyCount,
       figiSellCount: figiSellCount,
-      firstBuy: buys[0] ? {
-        figi: buys[0].figi,
-        uid: buys[0].instrumentUid,
-        qtyRaw: buys[0].quantity,
-        qtyParsed: parseMoneyLocal(buys[0].quantity),
-        priceParsed: parseMoneyLocal(buys[0].price),
-        date: buys[0].date
+      firstBuy: firstBuy ? {
+        figi: firstBuy.figi,
+        qty: parseMoneyLocal(firstBuy.quantity),
+        price: parseMoneyLocal(firstBuy.price),
+        date: firstBuy.date,
+        dateParsed: String(parseOpDate(firstBuy.date)),
+        ts: parseOpDate(firstBuy.date) ? parseOpDate(firstBuy.date).getTime() : 0
       } : null,
-      firstSell: sells[0] ? {
-        figi: sells[0].figi,
-        uid: sells[0].instrumentUid,
-        qtyRaw: sells[0].quantity,
-        qtyParsed: parseMoneyLocal(sells[0].quantity),
-        priceParsed: parseMoneyLocal(sells[0].price),
-        date: sells[0].date
+      firstSell: firstSell ? {
+        figi: firstSell.figi,
+        qty: parseMoneyLocal(firstSell.quantity),
+        price: parseMoneyLocal(firstSell.price),
+        date: firstSell.date,
+        dateParsed: String(parseOpDate(firstSell.date)),
+        ts: parseOpDate(firstSell.date) ? parseOpDate(firstSell.date).getTime() : 0
+      } : null,
+      _check: firstBuy && firstSell ? {
+        sameFigi: firstBuy.figi === firstSell.figi,
+        buyBeforeSell: parseOpDate(firstBuy.date).getTime() < parseOpDate(firstSell.date).getTime()
       } : null
     };
 
