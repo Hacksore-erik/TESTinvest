@@ -33,9 +33,25 @@ export const formatRub = (value) =>
 export const formatPercent = (value) =>
   (value >= 0 ? '+' : '') + value.toFixed(1) + '%';
 
+// parseMoney — поддерживает число, строку и объект {units, nano}
 export const parseMoney = (value) => {
-  if (!value) return 0;
-  return parseFloat(value.units || 0) + (value.nano || 0) / 1e9;
+  if (value === null || value === undefined) return 0;
+
+  // Число — вернуть как есть
+  if (typeof value === 'number') {
+    return isNaN(value) ? 0 : value;
+  }
+
+  // Строка — распарсить
+  if (typeof value === 'string') {
+    const n = parseFloat(value);
+    return isNaN(n) ? 0 : n;
+  }
+
+  // Объект { units, nano }
+  const units = parseFloat(value.units) || 0;
+  const nano = parseFloat(value.nano) || 0;
+  return units + nano / 1e9;
 };
 
 export const haptic = (ms = 5) => {
