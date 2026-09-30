@@ -113,6 +113,44 @@ export function mount(root) {
 // ===== RENDER ===============================================
 // ============================================================
 export function render(root) {
+  export function render(root) {
+  // ============ ВРЕМЕННЫЙ ДЕБАГ ============
+  (() => {
+    try {
+      const container = root.querySelector('.container');
+      if (!container) return;
+      const old = container.querySelector('#__debug');
+      if (old) old.remove();
+
+      const dbg = {
+        totalOps: state.operations.length,
+        mirrorYear: state.mirrorYear,
+        uniqueTypes: [...new Set(state.operations.map(op => op.type))],
+        uniqueYears: [...new Set(state.operations.map(op => op.date))].slice(0, 20),
+        first3: state.operations.slice(0, 3).map(op => ({
+          type: op.type,
+          date: op.date,
+          figi: op.figi,
+          uid: op.instrumentUid,
+          qty: op.quantity,
+          price: op.price,
+          payment: op.payment
+        }))
+      };
+
+      const pre = document.createElement('pre');
+      pre.id = '__debug';
+      pre.style.cssText = 'background:#000;color:#0f0;padding:12px;font-size:10px;white-space:pre-wrap;word-break:break-all;border-radius:8px;margin-bottom:12px;max-height:60vh;overflow:auto;user-select:text;-webkit-user-select:text;font-family:monospace';
+      pre.textContent = JSON.stringify(dbg, null, 2);
+      container.prepend(pre);
+    } catch (e) {
+      const pre = document.createElement('pre');
+      pre.style.cssText = 'background:#500;color:#fff;padding:12px;font-size:11px';
+      pre.textContent = 'DEBUG ERROR: ' + e.message;
+      root.querySelector('.container')?.prepend(pre);
+    }
+  })();
+  // ============ КОНЕЦ ДЕБАГА ============
   const year = state.mirrorYear || 2026;
   const m = analyzeMirror(state.operations, year);
 
