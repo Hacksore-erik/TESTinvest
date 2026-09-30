@@ -247,7 +247,7 @@ function formatHold(figi, days) {
 }
 
 // ============================================================
-// ===== ВРЕМЕННЫЙ ДЕБАГ (удалить после отладки) ==============
+// ===== ВРЕМЕННЫЙ ДЕБАГ — НОВАЯ ВЕРСИЯ =======================
 // ============================================================
 function renderDebug(root) {
   try {
@@ -258,29 +258,103 @@ function renderDebug(root) {
     if (old) old.remove();
 
     const ops = state.operations || [];
+    const year = state.mirrorYear || 2026;
+
+    // --- Логика как в services.js ---
+    function isBuy(op) {
+      const t = op.type;
+      return t === 1 || t === 'OPERATION_TYPE_BUY'
+        || t === 'Покупка ценных бумаг' || t === 'Покупка';
+    }
+    function isSell(op) {
+      const t = op.type;
+      return t === 2 || t === 'OPERATION_TYPE_SELL'
+        || t === 'Продажа ценных бумаг' || t === 'Продажа';
+    }
+
+    function parseOpDate(dateStr) {
+      if (!dateStr) return null;
+      if (dateStr.indexOf('.') !== -1 && dateStr.indexOf('T') === -1) {
+        const parts = dateStr.split('.');
+        if (parts.length === 3) {
+          const d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          return isNaN(d.getTime()) ? null : d;
+        }
+      }
+      let normalized = dateStr;
+      const dotIndex = dateStr.indexOf('.');
+      if (dotIndex !== -1) {
+        const beforeDot = dateStr.slice(0, dotIndex);
+        const afterDot = dateStr.slice(dotIndex + 1);
+        let msEnd = afterDot.length;
+        for (let i = 0; i < afterDot.length; i++) {
+          const ch = afterDot[i];
+          if (ch === 'Z' || ch === '+' || ch === '-') { msEnd = i; break; }
+        }
+        const ms = afterDot.slice(0, msEnd).slice(0, 3);
+        const rest = afterDot.slice(msEnd);
+        normalized = beforeDot + '.' + (ms || '0') + rest;
+      }
+      const d = new Date(normalized);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function parseMoneyLocal(v) {
+      if (!v) return 0;
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string') return parseFloat(v) || 0;
+      const units = parseFloat(v.units) || 0;
+      const nano = parseFloat(v.nano) || 0;
+      return units + nano / 1e9;
+    }
+
+    const yearOps = ops.filter(op => {
+      const d = parseOpDate(op.date);
+      return d && d.getFullYear() === year;
+    });
+
+    const buys = yearOps.filter(isBuy);
+    const sells = yearOps.filter(isSell);
+
+    const figiBuyCount = {};
+    buys.forEach(op => {
+      const figi = op.figi || op.instrumentUid;
+      if (!figi) return;
+      figiBuyCount[figi] = (figiBuyCount[figi] || 0) + 1;
+    });
+
+    const figiSellCount = {};
+    sells.forEach(op => {
+      const figi = op.figi || op.instrumentUid;
+      if (!figi) return;
+      figiSellCount[figi] = (figiSellCount[figi] || 0) + 1;
+    });
 
     const dbg = {
+      year: year,
       totalOps: ops.length,
-      mirrorYear: state.mirrorYear,
-      uniqueTypes: [],
-      first5: []
+      yearOpsCount: yearOps.length,
+      buysCount: buys.length,
+      sellsCount: sells.length,
+      figiBuyCount: figiBuyCount,
+      figiSellCount: figiSellCount,
+      firstBuy: buys[0] ? {
+        figi: buys[0].figi,
+        uid: buys[0].instrumentUid,
+        qtyRaw: buys[0].quantity,
+        qtyParsed: parseMoneyLocal(buys[0].quantity),
+        priceParsed: parseMoneyLocal(buys[0].price),
+        date: buys[0].date
+      } : null,
+      firstSell: sells[0] ? {
+        figi: sells[0].figi,
+        uid: sells[0].instrumentUid,
+        qtyRaw: sells[0].quantity,
+        qtyParsed: parseMoneyLocal(sells[0].quantity),
+        priceParsed: parseMoneyLocal(sells[0].price),
+        date: sells[0].date
+      } : null
     };
-
-    const typesSet = {};
-    ops.forEach(op => {
-      typesSet[String(op.type)] = true;
-    });
-    dbg.uniqueTypes = Object.keys(typesSet);
-
-    dbg.first5 = ops.slice(0, 5).map(op => ({
-      type: op.type,
-      date: op.date,
-      figi: op.figi,
-      uid: op.instrumentUid,
-      qty: op.quantity,
-      price: op.price,
-      payment: op.payment
-    }));
 
     const pre = document.createElement('pre');
     pre.id = '__debug';
