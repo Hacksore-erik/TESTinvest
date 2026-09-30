@@ -41,7 +41,7 @@ export function template() {
         <div class="row"><span class="lbl">Убыточных сделок</span><span class="val red" id="unprofitableRow">—</span></div>
         <div class="cost-total">
           <span class="lbl" id="totalDealsLabel">Итого</span>
-          <span class="val" id="totalPnl" style="color: var(--text-primary);">—</span>
+          <span class="val" id="totalPnl">—</span>
         </div>
         <div class="mirror-footer" id="dispositionFooter">Подключи токен, чтобы увидеть свои паттерны.</div>
       </div>
@@ -120,10 +120,39 @@ export function render(root) {
   const year = state.mirrorYear || 2026;
   const m = analyzeMirror(state.operations, year);
 
-  // ----- Диспозиция -----
-  renderDisposition(root, m, year);
+  // ----- Блок 1: Диспозиция -----
+  const profRow = root.querySelector('#profitableRow');
+  const unprofRow = root.querySelector('#unprofitableRow');
+  const totalPnlEl = root.querySelector('#totalPnl');
+  const totalLabelEl = root.querySelector('#totalDealsLabel');
+  const footer = root.querySelector('#dispositionFooter');
 
-  // ----- Время удержания -----
+  if (m.totalDeals > 0) {
+    profRow.textContent = m.profitableCount > 0
+      ? `${m.profitableCount} на +${formatRub(m.profitableSum)}`
+      : '0';
+    unprofRow.textContent = m.unprofitableCount > 0
+      ? `${m.unprofitableCount} на −${formatRub(m.unprofitableSum)}`
+      : '0';
+
+    totalLabelEl.textContent = `Итого ${m.totalDeals} сделок`;
+    const pnlSign = m.totalPnl >= 0 ? '+' : '−';
+    totalPnlEl.textContent = pnlSign + formatRub(Math.abs(m.totalPnl));
+    totalPnlEl.style.color = m.totalPnl >= 0
+      ? 'var(--accent-green)'
+      : 'var(--accent-red)';
+
+    footer.innerHTML = `На основе <span class="hl">${m.totalDeals} сделок</span> за ${year} год.`;
+  } else {
+    profRow.textContent = '—';
+    unprofRow.textContent = '—';
+    totalLabelEl.textContent = 'Итого 0 сделок';
+    totalPnlEl.textContent = '—';
+    totalPnlEl.style.color = 'var(--text-primary)';
+    footer.innerHTML = `Нет сделок за ${year} год.`;
+  }
+
+  // ----- Блок 2: Время удержания -----
   const avgHoldEl = root.querySelector('#avgHoldDays');
   const minHoldEl = root.querySelector('#minHoldDays');
   const maxHoldEl = root.querySelector('#maxHoldDays');
@@ -150,7 +179,7 @@ export function render(root) {
     holdingFooter.innerHTML = `Нет данных за ${year} год.`;
   }
 
-  // ----- Прибыльные / убыточные -----
+  // ----- Блок 3: Прибыльные / убыточные -----
   const profEl = root.querySelector('#profitableShare');
   const unprofEl = root.querySelector('#unprofitableShare');
   const winFooter = root.querySelector('#winRateFooter');
@@ -170,7 +199,7 @@ export function render(root) {
     winFooter.innerHTML = `Нет данных за ${year} год.`;
   }
 
-  // ----- Овертрейдинг -----
+  // ----- Блок 4: Овертрейдинг -----
   root.querySelector('#tradesCount').textContent = m.tradesPerYear;
   root.querySelector('#commissionTotal').textContent = formatRub(m.commissionsTotal);
   root.querySelector('#overtradingFooter').innerHTML = m.tradesPerYear > 50
@@ -179,7 +208,7 @@ export function render(root) {
       ? `${m.tradesPerYear} операций за ${year} год. Это в пределах нормы.`
       : `Нет операций за ${year} год.`;
 
-  // ----- Концентрация -----
+  // ----- Блок 5: Концентрация -----
   if (state.portfolio) {
     root.querySelector('#top2Share').textContent = m.top2Share.toFixed(0) + '%';
     root.querySelector('#top5Share').textContent = m.top5Share.toFixed(0) + '%';
@@ -189,7 +218,7 @@ export function render(root) {
       `Концентрация топ-2: <span class="hl">${m.top2Share.toFixed(0)}%</span>. Риск: ${risk}.`;
   }
 
-  // ----- Дни падения -----
+  // ----- Блок 6: Дни падения -----
   root.querySelector('#checksGrowth').textContent = m.growthDays + ' дней';
   root.querySelector('#checksFall').textContent = m.fallDays + ' дней';
 
@@ -203,53 +232,8 @@ export function render(root) {
       `Недостаточно данных за ${year} год. Нужно минимум <span class="hl">5 дней</span> с операциями.`;
   }
 
-  // ----- Цена решений -----
+  // ----- Блок 7: Цена решений -----
   renderCost(root, year);
-}
-
-// ============================================================
-// ===== БЛОК 1 — ДИСПОЗИЦИЯ ==================================
-// ============================================================
-function renderDisposition(root, m, year) {
-  const profRow = root.querySelector('#profitableRow');
-  const unprofRow = root.querySelector('#unprofitableRow');
-  const totalPnlEl = root.querySelector('#totalPnl');
-  const totalLabelEl = root.querySelector('#totalDealsLabel');
-  const footer = root.querySelector('#dispositionFooter');
-
-  if (m.totalDeals > 0) {
-    // Прибыльные
-    if (m.profitableCount > 0) {
-      profRow.textContent = `${m.profitableCount} на +${formatRub(m.profitableSum)}`;
-    } else {
-      profRow.textContent = '0';
-    }
-
-    // Убыточные
-    if (m.unprofitableCount > 0) {
-      unprofRow.textContent = `${m.unprofitableCount} на −${formatRub(m.unprofitableSum)}`;
-    } else {
-      unprofRow.textContent = '0';
-    }
-
-    // Итого
-    totalLabelEl.textContent = `Итого ${m.totalDeals} сделок`;
-    const pnlSign = m.totalPnl >= 0 ? '+' : '−';
-    totalPnlEl.textContent = pnlSign + formatRub(Math.abs(m.totalPnl));
-    totalPnlEl.style.color = m.totalPnl >= 0
-      ? 'var(--accent-green)'
-      : 'var(--accent-red)';
-
-    // Футер
-    footer.innerHTML = `На основе <span class="hl">${m.totalDeals} сделок</span> за ${year} год.`;
-  } else {
-    profRow.textContent = '—';
-    unprofRow.textContent = '—';
-    totalLabelEl.textContent = 'Итого 0 сделок';
-    totalPnlEl.textContent = '—';
-    totalPnlEl.style.color = 'var(--text-primary)';
-    footer.innerHTML = `Нет сделок за ${year} год.`;
-  }
 }
 
 // ============================================================
