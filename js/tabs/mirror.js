@@ -113,7 +113,6 @@ export function mount(root) {
 // ===== RENDER ===============================================
 // ============================================================
 export function render(root) {
-  export function render(root) {
   const year = state.mirrorYear || 2026;
   const m = analyzeMirror(state.operations, year);
 
@@ -138,18 +137,12 @@ export function render(root) {
 
   if (m.avgHoldDays !== null) {
     avgHoldEl.textContent = formatDays(m.avgHoldDays);
-
-    if (m.minHoldDays !== null) {
-      minHoldEl.textContent = formatHold(m.minHoldFigi, m.minHoldDays);
-    } else {
-      minHoldEl.textContent = '—';
-    }
-
-    if (m.maxHoldDays !== null) {
-      maxHoldEl.textContent = formatHold(m.maxHoldFigi, m.maxHoldDays);
-    } else {
-      maxHoldEl.textContent = '—';
-    }
+    minHoldEl.textContent = m.minHoldDays !== null
+      ? formatHold(m.minHoldFigi, m.minHoldDays)
+      : '—';
+    maxHoldEl.textContent = m.maxHoldDays !== null
+      ? formatHold(m.maxHoldFigi, m.maxHoldDays)
+      : '—';
 
     holdingFooter.innerHTML = m.avgHoldDays < 30
       ? `Средний инвестор держит бумаги <span class="hl">6–12 месяцев</span>. Твои сделки — короткие.`
