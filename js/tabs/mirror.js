@@ -114,31 +114,6 @@ export function mount(root) {
 // ============================================================
 export function render(root) {
   export function render(root) {
-  // ВРЕМЕННАЯ ОТЛАДКА — потом уберём
-  const dbg = {
-    totalOps: state.operations.length,
-    mirrorYear: state.mirrorYear,
-    types: [...new Set(state.operations.map(op => op.type))],
-    years: [...new Set(state.operations.map(op => op.date && op.date.split('-')[0]))],
-    sellsCount: state.operations.filter(op => op.type === 2 || op.type === 'OPERATION_TYPE_SELL').length,
-    buysCount: state.operations.filter(op => op.type === 1 || op.type === 'OPERATION_TYPE_BUY').length,
-    sample: state.operations.slice(0, 3).map(op => ({
-      type: op.type,
-      date: op.date,
-      figi: op.figi,
-      uid: op.instrumentUid,
-      qty: op.quantity,
-      price: op.price,
-      payment: op.payment
-    }))
-  };
-
-  const dbgEl = document.createElement('pre');
-  dbgEl.style.cssText = 'background:#111;color:#0f0;padding:12px;font-size:10px;white-space:pre-wrap;word-break:break-all;border-radius:8px;margin-bottom:12px;max-height:400px;overflow:auto;user-select:text;-webkit-user-select:text';
-  dbgEl.textContent = JSON.stringify(dbg, null, 2);
-  root.querySelector('.container').prepend(dbgEl);
-  // КОНЕЦ ОТЛАДКИ
-  // ... дальше как было
   const year = state.mirrorYear || 2026;
   const m = analyzeMirror(state.operations, year);
 
