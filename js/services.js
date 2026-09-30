@@ -3,11 +3,6 @@ import { state, parseMoney } from './core.js';
 // ============================================================
 // ===== HELPERS — определение типов операций =================
 // ============================================================
-// T-Invest API возвращает type либо числами (1, 2, 5, 6, 8),
-// либо английскими константами (OPERATION_TYPE_*),
-// либо РУССКИМИ строками ("Продажа ценных бумаг").
-// Поддерживаем все варианты.
-// ============================================================
 function isBuy(op) {
   const t = op.type;
   return t === 1
@@ -55,7 +50,7 @@ function parseOpDate(dateStr) {
   if (!dateStr) return null;
 
   // Формат ДД.ММ.ГГГГ (с точками)
-  if (dateStr.includes('.')) {
+  if (dateStr.indexOf('.') !== -1 && dateStr.indexOf('T') === -1) {
     const parts = dateStr.split('.');
     if (parts.length === 3) {
       const day = parseInt(parts[0]);
@@ -66,8 +61,29 @@ function parseOpDate(dateStr) {
     }
   }
 
-  // Формат ISO (YYYY-MM-DDTHH:mm:ss)
-  const d = new Date(dateStr);
+  // ISO с микросекундами: 2026-09-30T10:46:03.221905Z
+  // Safari не любит >3 знаков после точки — обрезаем
+  let normalized = dateStr;
+  const dotIndex = dateStr.indexOf('.');
+  if (dotIndex !== -1) {
+    const beforeDot = dateStr.slice(0, dotIndex);
+    const afterDot = dateStr.slice(dotIndex + 1);
+
+    let msEnd = afterDot.length;
+    for (let i = 0; i < afterDot.length; i++) {
+      const ch = afterDot[i];
+      if (ch === 'Z' || ch === '+' || ch === '-') {
+        msEnd = i;
+        break;
+      }
+    }
+
+    const ms = afterDot.slice(0, msEnd).slice(0, 3);
+    const rest = afterDot.slice(msEnd);
+    normalized = beforeDot + '.' + (ms || '0') + rest;
+  }
+
+  const d = new Date(normalized);
   return isNaN(d.getTime()) ? null : d;
 }
 
