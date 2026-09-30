@@ -138,11 +138,7 @@ export function render(root) {
   dbgEl.textContent = JSON.stringify(dbg, null, 2);
   root.querySelector('.container').prepend(dbgEl);
   // КОНЕЦ ОТЛАДКИ
-
-  const year = state.mirrorYear || 2026;
-  const m = analyzeMirror(state.operations, year);
   // ... дальше как было
-}
   const year = state.mirrorYear || 2026;
   const m = analyzeMirror(state.operations, year);
 
