@@ -19,15 +19,35 @@ function isCoupon(op) {
   return op.type === 6 || op.type === 'OPERATION_TYPE_COUPON';
 }
 
+// Универсальный парсер даты: поддерживает 'YYYY-MM-DD...' и 'DD.MM.YYYY'
+function parseOpDate(dateStr) {
+  if (!dateStr) return null;
+
+  // Формат ДД.ММ.ГГГГ (с точками)
+  if (dateStr.includes('.')) {
+    const parts = dateStr.split('.');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1;
+      const year = parseInt(parts[2]);
+      const d = new Date(year, month, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
+  }
+
+  // Формат YYYY-MM-DD (ISO)
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function getYear(op) {
-  if (!op.date) return null;
-  return parseInt(op.date.split('-')[0]);
+  const d = parseOpDate(op.date);
+  return d ? d.getFullYear() : null;
 }
 
 function getTimestamp(op) {
-  if (!op.date) return 0;
-  const t = new Date(op.date).getTime();
-  return isNaN(t) ? 0 : t;
+  const d = parseOpDate(op.date);
+  return d ? d.getTime() : 0;
 }
 
 // ============================================================
@@ -41,10 +61,17 @@ function getTimestamp(op) {
 // ============================================================
 function computeFIFO(operations) {
   const queues = {}; // figi -> [{qty, price, date}]
-  const holdDays = []; // { figi, days, ts }
+  const holdDays = []; // { figi, days }
   const pnls = [];     // { figi, pnl }
 
-  const sorted = [...operations].sort((a, b) => getTimestamp(a) - getTimestamp(b));
+  const sorted = [...operations].sort((a, b) => {
+    const ta = getTimestamp(a);
+    const tb = getTimestamp(b);
+    if (ta !== tb) return ta - tb;
+    // При одинаковой дате покупка идёт раньше продажи
+    const priority = (op) => (isBuy(op) ? 0 : 1);
+    return priority(a) - priority(b);
+  });
 
   sorted.forEach(op => {
     const figi = op.figi || op.instrumentUid;
@@ -58,7 +85,7 @@ function computeFIFO(operations) {
 
     if (isBuy(op)) {
       if (!queues[figi]) queues[figi] = [];
-      queues[figi].push({ qty, price, date: ts, figi });
+      queues[figi].push({ qty, price, date: ts });
       return;
     }
 
@@ -71,9 +98,11 @@ function computeFIFO(operations) {
         const take = Math.min(lot.qty, remaining);
 
         // Время удержания
-        if (lot.date > 0 && ts > 0 && ts >= lot.date) {
+        if (lot.date > 0 && ts > 0) {
           const days = Math.round((ts - lot.date) / (1000 * 60 * 60 * 24));
-          holdDays.push({ figi, days, ts });
+          if (days >= 0) {
+            holdDays.push({ figi, days });
+          }
         }
 
         // P&L
@@ -155,15 +184,21 @@ export function analyzeMirror(operations, year = null) {
       if (p > 0) profits.push(p);
       else losses.push(Math.abs(p));
     });
-    result.avgProfit = profits.length ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
-    result.avgLoss = losses.length ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
+    result.avgProfit = profits.length
+      ? profits.reduce((a, b) => a + b, 0) / profits.length
+      : 0;
+    result.avgLoss = losses.length
+      ? losses.reduce((a, b) => a + b, 0) / losses.length
+      : 0;
   }
 
   // ----- Овертрейдинг -----
   result.tradesPerYear = yearOps.length;
 
   const feeOps = yearOps.filter(isFee);
-  result.commissionsTotal = feeOps.reduce((sum, op) => sum + Math.abs(parseMoney(op.payment)), 0);
+  result.commissionsTotal = feeOps.reduce(
+    (sum, op) => sum + Math.abs(parseMoney(op.payment)), 0
+  );
 
   // ----- Концентрация (по текущему портфелю, год не влияет) -----
   if (state.portfolio) {
@@ -180,8 +215,9 @@ export function analyzeMirror(operations, year = null) {
   // ----- Дни роста / падения -----
   const daily = {};
   yearOps.forEach(op => {
-    if (!op.date) return;
-    const day = op.date.split('T')[0];
+    const d = parseOpDate(op.date);
+    if (!d) return;
+    const day = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
     if (!daily[day]) daily[day] = { volume: 0 };
     daily[day].volume += parseMoney(op.payment);
   });
@@ -197,7 +233,6 @@ export function analyzeMirror(operations, year = null) {
     const days = holdDays.map(h => h.days);
     result.avgHoldDays = days.reduce((a, b) => a + b, 0) / days.length;
 
-    // Min
     let minItem = holdDays[0];
     let maxItem = holdDays[0];
     holdDays.forEach(h => {
@@ -251,7 +286,10 @@ export function generateInsight(operations) {
 
   const now = new Date();
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const recent = operations.filter(op => op.date && new Date(op.date) > monthAgo);
+  const recent = operations.filter(op => {
+    const d = parseOpDate(op.date);
+    return d && d > monthAgo;
+  });
 
   if (recent.length > 20) {
     return `За последние 30 дней ты совершил <span class="insight-highlight">${recent.length} операций</span>. Средний инвестор — 12. Больше сделок ≠ лучше результат.`;
