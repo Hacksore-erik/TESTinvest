@@ -1,19 +1,111 @@
-import { state, formatRub, parseMoney } from './core.js';
+import { state, parseMoney } from './core.js';
+
+// ============================================================
+// ===== HELPERS ==============================================
+// ============================================================
+function isBuy(op) {
+  return op.type === 1 || op.type === 'OPERATION_TYPE_BUY';
+}
+function isSell(op) {
+  return op.type === 2 || op.type === 'OPERATION_TYPE_SELL';
+}
+function isFee(op) {
+  return op.type === 8 || op.type === 'OPERATION_TYPE_FEE';
+}
+function isDividend(op) {
+  return op.type === 5 || op.type === 'OPERATION_TYPE_DIVIDEND';
+}
+function isCoupon(op) {
+  return op.type === 6 || op.type === 'OPERATION_TYPE_COUPON';
+}
+
+function getYear(op) {
+  if (!op.date) return null;
+  return parseInt(op.date.split('-')[0]);
+}
+
+function getTimestamp(op) {
+  if (!op.date) return 0;
+  const t = new Date(op.date).getTime();
+  return isNaN(t) ? 0 : t;
+}
+
+// ============================================================
+// ===== FIFO АНАЛИЗ ==========================================
+// ============================================================
+// Идём по операциям хронологически.
+// Для каждой бумаги держим очередь покупок [{qty, price, date}].
+// При продаже — берём из очереди FIFO, считаем:
+//   - holdDays (sell.date - buy.date)
+//   - pnl ((sell.price - buy.price) * qty)
+// ============================================================
+function computeFIFO(operations) {
+  const queues = {}; // figi -> [{qty, price, date}]
+  const holdDays = []; // { figi, days, ts }
+  const pnls = [];     // { figi, pnl }
+
+  const sorted = [...operations].sort((a, b) => getTimestamp(a) - getTimestamp(b));
+
+  sorted.forEach(op => {
+    const figi = op.figi || op.instrumentUid;
+    if (!figi) return;
+
+    const qty = parseMoney(op.quantity);
+    const price = parseMoney(op.price);
+    const ts = getTimestamp(op);
+
+    if (qty <= 0) return;
+
+    if (isBuy(op)) {
+      if (!queues[figi]) queues[figi] = [];
+      queues[figi].push({ qty, price, date: ts, figi });
+      return;
+    }
+
+    if (isSell(op)) {
+      if (!queues[figi] || queues[figi].length === 0) return;
+
+      let remaining = qty;
+      while (remaining > 0 && queues[figi].length > 0) {
+        const lot = queues[figi][0];
+        const take = Math.min(lot.qty, remaining);
+
+        // Время удержания
+        if (lot.date > 0 && ts > 0 && ts >= lot.date) {
+          const days = Math.round((ts - lot.date) / (1000 * 60 * 60 * 24));
+          holdDays.push({ figi, days, ts });
+        }
+
+        // P&L
+        const pnl = (price - lot.price) * take;
+        pnls.push({ figi, pnl });
+
+        lot.qty -= take;
+        remaining -= take;
+
+        if (lot.qty <= 0.000001) queues[figi].shift();
+      }
+    }
+  });
+
+  return { holdDays, pnls };
+}
 
 // ============================================================
 // ===== TAX SERVICE (2026) ===================================
 // ============================================================
-export function calculateTax(operations) {
+export function calculateTax(operations, year = null) {
   let dividendIncome = 0, couponIncome = 0, realizedProfit = 0, commissions = 0;
 
   operations.forEach(op => {
-    const payment = parseMoney(op.payment);
-    const type = op.type || '';
+    if (year !== null && getYear(op) !== year) return;
 
-    if (type === 5 || type === 'OPERATION_TYPE_DIVIDEND') dividendIncome += Math.abs(payment);
-    else if (type === 6 || type === 'OPERATION_TYPE_COUPON') couponIncome += Math.abs(payment);
-    else if (type === 2 || type === 'OPERATION_TYPE_SELL') { if (payment > 0) realizedProfit += payment; }
-    else if (type === 8 || type === 'OPERATION_TYPE_FEE') commissions += Math.abs(payment);
+    const payment = parseMoney(op.payment);
+
+    if (isDividend(op)) dividendIncome += Math.abs(payment);
+    else if (isCoupon(op)) couponIncome += Math.abs(payment);
+    else if (isSell(op)) { if (payment > 0) realizedProfit += payment; }
+    else if (isFee(op)) commissions += Math.abs(payment);
   });
 
   const totalIncome = dividendIncome + couponIncome + realizedProfit;
@@ -31,37 +123,49 @@ export function calculateTax(operations) {
 // ============================================================
 // ===== MIRROR SERVICE =======================================
 // ============================================================
-export function analyzeMirror(operations) {
+export function analyzeMirror(operations, year = null) {
   const result = {
     sells: 0, avgProfit: 0, avgLoss: 0,
     tradesPerYear: 0, commissionsTotal: 0,
     top2Share: 0, top5Share: 0,
-    growthDays: 0, fallDays: 0
+    growthDays: 0, fallDays: 0,
+    // Новые поля
+    avgHoldDays: null,
+    minHoldDays: null,
+    maxHoldDays: null,
+    minHoldFigi: null,
+    maxHoldFigi: null,
+    profitableShare: null,
+    unprofitableShare: null
   };
 
-  const sells = operations.filter(op => op.type === 2 || op.type === 'OPERATION_TYPE_SELL');
+  // Фильтр по году
+  const yearOps = year === null
+    ? operations
+    : operations.filter(op => getYear(op) === year);
+
+  // ----- Диспозиция -----
+  const sells = yearOps.filter(isSell);
   result.sells = sells.length;
 
   if (sells.length > 0) {
     const profits = [], losses = [];
     sells.forEach(op => {
       const p = parseMoney(op.payment);
-      if (p > 0) profits.push(p); else losses.push(Math.abs(p));
+      if (p > 0) profits.push(p);
+      else losses.push(Math.abs(p));
     });
     result.avgProfit = profits.length ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
     result.avgLoss = losses.length ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
   }
 
-  const yearOps = operations.filter(op => {
-    if (!op.date) return false;
-    const year = parseInt(op.date.split('-')[0]);
-    return year === 2026 || year === 2025;
-  });
+  // ----- Овертрейдинг -----
   result.tradesPerYear = yearOps.length;
 
-  const feeOps = operations.filter(op => op.type === 8 || op.type === 'OPERATION_TYPE_FEE');
+  const feeOps = yearOps.filter(isFee);
   result.commissionsTotal = feeOps.reduce((sum, op) => sum + Math.abs(parseMoney(op.payment)), 0);
 
+  // ----- Концентрация (по текущему портфелю, год не влияет) -----
   if (state.portfolio) {
     const positions = (state.portfolio.positions || [])
       .map(p => ({ value: parseMoney(p.quantity) * parseMoney(p.currentPrice) }))
@@ -73,17 +177,46 @@ export function analyzeMirror(operations) {
     }
   }
 
+  // ----- Дни роста / падения -----
   const daily = {};
-  operations.forEach(op => {
+  yearOps.forEach(op => {
     if (!op.date) return;
     const day = op.date.split('T')[0];
-    if (!daily[day]) daily[day] = { count: 0, volume: 0 };
-    daily[day].count++;
+    if (!daily[day]) daily[day] = { volume: 0 };
     daily[day].volume += parseMoney(op.payment);
   });
   Object.keys(daily).forEach(d => {
-    if (daily[d].volume >= 0) result.growthDays++; else result.fallDays++;
+    if (daily[d].volume >= 0) result.growthDays++;
+    else result.fallDays++;
   });
+
+  // ----- FIFO: holdDays и PnL -----
+  const { holdDays, pnls } = computeFIFO(yearOps);
+
+  if (holdDays.length > 0) {
+    const days = holdDays.map(h => h.days);
+    result.avgHoldDays = days.reduce((a, b) => a + b, 0) / days.length;
+
+    // Min
+    let minItem = holdDays[0];
+    let maxItem = holdDays[0];
+    holdDays.forEach(h => {
+      if (h.days < minItem.days) minItem = h;
+      if (h.days > maxItem.days) maxItem = h;
+    });
+    result.minHoldDays = minItem.days;
+    result.maxHoldDays = maxItem.days;
+    result.minHoldFigi = minItem.figi;
+    result.maxHoldFigi = maxItem.figi;
+  }
+
+  if (pnls.length > 0) {
+    const profitable = pnls.filter(p => p.pnl > 0).length;
+    const unprofitable = pnls.filter(p => p.pnl <= 0).length;
+    const total = pnls.length;
+    result.profitableShare = (profitable / total) * 100;
+    result.unprofitableShare = (unprofitable / total) * 100;
+  }
 
   return result;
 }
@@ -97,11 +230,9 @@ export const OP_TYPES = {
 };
 
 export function analyzeJournal(operations) {
-  const buys = operations.filter(op => op.type === 1 || op.type === 'OPERATION_TYPE_BUY');
-  const sells = operations.filter(op => op.type === 2 || op.type === 'OPERATION_TYPE_SELL');
-  const divs = operations.filter(op =>
-    [5, 6, 'OPERATION_TYPE_DIVIDEND', 'OPERATION_TYPE_COUPON'].includes(op.type)
-  );
+  const buys = operations.filter(isBuy);
+  const sells = operations.filter(isSell);
+  const divs = operations.filter(op => isDividend(op) || isCoupon(op));
   return {
     total: operations.length,
     buys: buys.length,
