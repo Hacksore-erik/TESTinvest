@@ -42,7 +42,7 @@ window.kompasRefreshAll = () => {
 window.addEventListener('DOMContentLoaded', () => {
   renderTabBar();
 
-  Object.entries(TABS).forEach(([id, mod]) => {
+ Object.entries(TABS).forEach(([id, mod]) => {
     const root = document.getElementById('tab-' + id);
     if (root && mod.mount) {
       try {
@@ -53,4 +53,9 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  // Обновить аватары в шапках всех вкладок (после монтирования)
+  if (window.kompasApplyAvatar) {
+    window.kompasApplyAvatar();
+  }
 });
