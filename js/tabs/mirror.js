@@ -37,8 +37,12 @@ export function template() {
 
       <div class="card card-neutral fade-up">
         <div class="mirror-title">Ты рано фиксируешь прибыль и долго держишь убытки</div>
-        <div class="row"><span class="lbl">Средняя продажа с плюсом</span><span class="val green" id="avgProfit">—</span></div>
-        <div class="row"><span class="lbl">Средняя продажа с минусом</span><span class="val red" id="avgLoss">—</span></div>
+        <div class="row"><span class="lbl">Прибыльных сделок</span><span class="val green" id="profitableRow">—</span></div>
+        <div class="row"><span class="lbl">Убыточных сделок</span><span class="val red" id="unprofitableRow">—</span></div>
+        <div class="cost-total">
+          <span class="lbl" id="totalDealsLabel">Итого</span>
+          <span class="val" id="totalPnl" style="color: var(--text-primary);">—</span>
+        </div>
         <div class="mirror-footer" id="dispositionFooter">Подключи токен, чтобы увидеть свои паттерны.</div>
       </div>
 
@@ -113,23 +117,11 @@ export function mount(root) {
 // ===== RENDER ===============================================
 // ============================================================
 export function render(root) {
-  renderDebug(root);
-
   const year = state.mirrorYear || 2026;
   const m = analyzeMirror(state.operations, year);
 
   // ----- Диспозиция -----
-  if (m.sells > 0) {
-    root.querySelector('#avgProfit').textContent = formatRub(m.avgProfit);
-    root.querySelector('#avgLoss').textContent = '−' + formatRub(m.avgLoss);
-    root.querySelector('#dispositionFooter').innerHTML =
-      `На основе <span class="hl">${m.sells} продаж</span> за ${year} год.`;
-  } else {
-    root.querySelector('#avgProfit').textContent = '—';
-    root.querySelector('#avgLoss').textContent = '—';
-    root.querySelector('#dispositionFooter').innerHTML =
-      `Нет продаж за ${year} год.`;
-  }
+  renderDisposition(root, m, year);
 
   // ----- Время удержания -----
   const avgHoldEl = root.querySelector('#avgHoldDays');
@@ -216,6 +208,51 @@ export function render(root) {
 }
 
 // ============================================================
+// ===== БЛОК 1 — ДИСПОЗИЦИЯ ==================================
+// ============================================================
+function renderDisposition(root, m, year) {
+  const profRow = root.querySelector('#profitableRow');
+  const unprofRow = root.querySelector('#unprofitableRow');
+  const totalPnlEl = root.querySelector('#totalPnl');
+  const totalLabelEl = root.querySelector('#totalDealsLabel');
+  const footer = root.querySelector('#dispositionFooter');
+
+  if (m.totalDeals > 0) {
+    // Прибыльные
+    if (m.profitableCount > 0) {
+      profRow.textContent = `${m.profitableCount} на +${formatRub(m.profitableSum)}`;
+    } else {
+      profRow.textContent = '0';
+    }
+
+    // Убыточные
+    if (m.unprofitableCount > 0) {
+      unprofRow.textContent = `${m.unprofitableCount} на −${formatRub(m.unprofitableSum)}`;
+    } else {
+      unprofRow.textContent = '0';
+    }
+
+    // Итого
+    totalLabelEl.textContent = `Итого ${m.totalDeals} сделок`;
+    const pnlSign = m.totalPnl >= 0 ? '+' : '−';
+    totalPnlEl.textContent = pnlSign + formatRub(Math.abs(m.totalPnl));
+    totalPnlEl.style.color = m.totalPnl >= 0
+      ? 'var(--accent-green)'
+      : 'var(--accent-red)';
+
+    // Футер
+    footer.innerHTML = `На основе <span class="hl">${m.totalDeals} сделок</span> за ${year} год.`;
+  } else {
+    profRow.textContent = '—';
+    unprofRow.textContent = '—';
+    totalLabelEl.textContent = 'Итого 0 сделок';
+    totalPnlEl.textContent = '—';
+    totalPnlEl.style.color = 'var(--text-primary)';
+    footer.innerHTML = `Нет сделок за ${year} год.`;
+  }
+}
+
+// ============================================================
 // ===== ЦЕНА РЕШЕНИЙ =========================================
 // ============================================================
 function renderCost(root, year) {
@@ -244,163 +281,4 @@ function formatHold(figi, days) {
 
   if (!name) return dayStr;
   return name + ' — ' + dayStr;
-}
-
-// ============================================================
-// ===== ВРЕМЕННЫЙ ДЕБАГ v7 ===================================
-// ============================================================
-function renderDebug(root) {
-  try {
-    const container = root.querySelector('.container');
-    if (!container) return;
-
-    const old = container.querySelector('#__debug');
-    if (old) old.remove();
-
-    const ops = state.operations || [];
-    const year = state.mirrorYear || 2026;
-
-    // --- Локальные хелперы ---
-    function isBuy(op) {
-      const t = op.type;
-      return t === 1 || t === 'OPERATION_TYPE_BUY'
-        || t === 'Покупка ценных бумаг' || t === 'Покупка';
-    }
-    function isSell(op) {
-      const t = op.type;
-      return t === 2 || t === 'OPERATION_TYPE_SELL'
-        || t === 'Продажа ценных бумаг' || t === 'Продажа';
-    }
-
-    function parseOpDate(dateStr) {
-      if (!dateStr) return null;
-      if (dateStr.indexOf('.') !== -1 && dateStr.indexOf('T') === -1) {
-        const parts = dateStr.split('.');
-        if (parts.length === 3) {
-          const d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-          return isNaN(d.getTime()) ? null : d;
-        }
-      }
-      let normalized = dateStr;
-      const dotIndex = dateStr.indexOf('.');
-      if (dotIndex !== -1) {
-        const beforeDot = dateStr.slice(0, dotIndex);
-        const afterDot = dateStr.slice(dotIndex + 1);
-        let msEnd = afterDot.length;
-        for (let i = 0; i < afterDot.length; i++) {
-          const ch = afterDot[i];
-          if (ch === 'Z' || ch === '+' || ch === '-') { msEnd = i; break; }
-        }
-        const ms = afterDot.slice(0, msEnd).slice(0, 3);
-        const rest = afterDot.slice(msEnd);
-        normalized = beforeDot + '.' + (ms || '0') + rest;
-      }
-      const d = new Date(normalized);
-      return isNaN(d.getTime()) ? null : d;
-    }
-
-    function parseMoneyLocal(v) {
-      if (!v) return 0;
-      if (typeof v === 'number') return v;
-      if (typeof v === 'string') return parseFloat(v) || 0;
-      const units = parseFloat(v.units) || 0;
-      const nano = parseFloat(v.nano) || 0;
-      return units + nano / 1e9;
-    }
-
-    const yearOps = ops.filter(op => {
-      const d = parseOpDate(op.date);
-      return d && d.getFullYear() === year;
-    });
-
-    const buys = yearOps.filter(isBuy);
-    const sells = yearOps.filter(isSell);
-
-    const figiBuyCount = {};
-    buys.forEach(op => {
-      const figi = op.figi || op.instrumentUid;
-      if (!figi) return;
-      figiBuyCount[figi] = (figiBuyCount[figi] || 0) + 1;
-    });
-
-    const figiSellCount = {};
-    sells.forEach(op => {
-      const figi = op.figi || op.instrumentUid;
-      if (!figi) return;
-      figiSellCount[figi] = (figiSellCount[figi] || 0) + 1;
-    });
-
-    const sortedBuys = [...buys].sort((a, b) => {
-      const da = parseOpDate(a.date);
-      const db = parseOpDate(b.date);
-      return (da ? da.getTime() : 0) - (db ? db.getTime() : 0);
-    });
-    const sortedSells = [...sells].sort((a, b) => {
-      const da = parseOpDate(a.date);
-      const db = parseOpDate(b.date);
-      return (da ? da.getTime() : 0) - (db ? db.getTime() : 0);
-    });
-
-    const firstBuy = sortedBuys[0];
-    const firstSell = sortedSells[0];
-
-    // ============ РЕАЛЬНЫЙ ВЫЗОВ analyzeMirror ============
-    let realResult = null;
-    let realError = null;
-    try {
-      realResult = analyzeMirror(ops, year);
-    } catch (err) {
-      realError = (err && err.message) ? err.message : String(err);
-    }
-
-    const dbg = {
-      _version: 'v7-' + Date.now(),
-      year: year,
-      totalOps: ops.length,
-      yearOpsCount: yearOps.length,
-      buysCount: buys.length,
-      sellsCount: sells.length,
-      figiBuyCount: figiBuyCount,
-      figiSellCount: figiSellCount,
-      firstBuy: firstBuy ? {
-        figi: firstBuy.figi,
-        qty: parseMoneyLocal(firstBuy.quantity),
-        price: parseMoneyLocal(firstBuy.price),
-        date: firstBuy.date,
-        ts: parseOpDate(firstBuy.date) ? parseOpDate(firstBuy.date).getTime() : 0
-      } : null,
-      firstSell: firstSell ? {
-        figi: firstSell.figi,
-        qty: parseMoneyLocal(firstSell.quantity),
-        price: parseMoneyLocal(firstSell.price),
-        date: firstSell.date,
-        ts: parseOpDate(firstSell.date) ? parseOpDate(firstSell.date).getTime() : 0
-      } : null,
-      realError: realError,
-      realResult: realResult ? {
-        sells: realResult.sells,
-        tradesPerYear: realResult.tradesPerYear,
-        avgHoldDays: realResult.avgHoldDays,
-        minHoldDays: realResult.minHoldDays,
-        maxHoldDays: realResult.maxHoldDays,
-        minHoldFigi: realResult.minHoldFigi,
-        maxHoldFigi: realResult.maxHoldFigi,
-        profitableShare: realResult.profitableShare,
-        unprofitableShare: realResult.unprofitableShare,
-        commissionsTotal: realResult.commissionsTotal
-      } : null
-    };
-
-    const pre = document.createElement('pre');
-    pre.id = '__debug';
-    pre.style.cssText = 'background:#000;color:#0f0;padding:12px;font-size:10px;white-space:pre-wrap;word-break:break-all;border-radius:8px;margin-bottom:12px;max-height:60vh;overflow:auto;user-select:text;-webkit-user-select:text;font-family:monospace';
-    pre.textContent = JSON.stringify(dbg, null, 2);
-    container.prepend(pre);
-  } catch (e) {
-    const pre = document.createElement('pre');
-    pre.style.cssText = 'background:#500;color:#fff;padding:12px;font-size:11px;white-space:pre-wrap';
-    pre.textContent = 'DEBUG ERROR: ' + (e && e.message ? e.message : 'unknown');
-    const container = root.querySelector('.container');
-    if (container) container.prepend(pre);
-  }
 }
