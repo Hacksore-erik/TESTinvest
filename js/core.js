@@ -10,7 +10,8 @@ export const state = {
   operations: [],
   totalValue: 0,
   investedValue: 0,
-  instrumentNames: {}
+  instrumentNames: {},
+  mirrorYear: 2026
 };
 
 export const CONFIG = {
@@ -100,13 +101,19 @@ export function applyGlobalAvatar() {
     // Тап → переход в Профиль (вешаем один раз)
     if (!el.dataset.navBound) {
       el.dataset.navBound = '1';
-      el.addEventListener('click', () => switchTab('me'));
+      el.addEventListener('click', () => {
+        haptic(5);
+        switchTab('me');
+      });
     }
   });
 }
 
 // Реакция на изменение профиля
 window.addEventListener('kompas:profile-changed', () => applyGlobalAvatar());
+
+// Экспорт для app.js (обновить аватары после монтирования вкладок)
+window.kompasApplyAvatar = applyGlobalAvatar;
 
 // ============================================================
 // ===== SVG ICONS — outline + filled =========================
@@ -538,7 +545,7 @@ function initSwipe() {
   app.addEventListener('touchstart', (e) => {
     if (e.target.closest('.tab-bar')) return;
     if (e.target.closest('.pager-viewport')) return;
-    if (e.target.closest('input, textarea')) {
+    if (e.target.closest('input, textarea, select')) {
       isTracking = false;
       return;
     }
@@ -609,8 +616,3 @@ if (document.readyState === 'loading') {
 // ===== INIT GLOBAL ERROR HANDLERS ===========================
 // ============================================================
 initGlobalHandlers();
-
-// ============================================================
-// ===== INIT GLOBAL AVATAR ===================================
-// ============================================================
-window.kompasApplyAvatar = applyGlobalAvatar;
