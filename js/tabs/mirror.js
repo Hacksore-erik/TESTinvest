@@ -247,7 +247,7 @@ function formatHold(figi, days) {
 }
 
 // ============================================================
-// ===== ВРЕМЕННЫЙ ДЕБАГ v5 ===================================
+// ===== ВРЕМЕННЫЙ ДЕБАГ v7 ===================================
 // ============================================================
 function renderDebug(root) {
   try {
@@ -260,7 +260,7 @@ function renderDebug(root) {
     const ops = state.operations || [];
     const year = state.mirrorYear || 2026;
 
-    // --- Логика как в services.js ---
+    // --- Локальные хелперы ---
     function isBuy(op) {
       const t = op.type;
       return t === 1 || t === 'OPERATION_TYPE_BUY'
@@ -330,7 +330,6 @@ function renderDebug(root) {
       figiSellCount[figi] = (figiSellCount[figi] || 0) + 1;
     });
 
-    // ---- Проверка сортировки ----
     const sortedBuys = [...buys].sort((a, b) => {
       const da = parseOpDate(a.date);
       const db = parseOpDate(b.date);
@@ -345,8 +344,17 @@ function renderDebug(root) {
     const firstBuy = sortedBuys[0];
     const firstSell = sortedSells[0];
 
+    // ============ РЕАЛЬНЫЙ ВЫЗОВ analyzeMirror ============
+    let realResult = null;
+    let realError = null;
+    try {
+      realResult = analyzeMirror(ops, year);
+    } catch (err) {
+      realError = (err && err.message) ? err.message : String(err);
+    }
+
     const dbg = {
-      _version: 'v5-' + Date.now(),
+      _version: 'v7-' + Date.now(),
       year: year,
       totalOps: ops.length,
       yearOpsCount: yearOps.length,
@@ -359,7 +367,6 @@ function renderDebug(root) {
         qty: parseMoneyLocal(firstBuy.quantity),
         price: parseMoneyLocal(firstBuy.price),
         date: firstBuy.date,
-        dateParsed: String(parseOpDate(firstBuy.date)),
         ts: parseOpDate(firstBuy.date) ? parseOpDate(firstBuy.date).getTime() : 0
       } : null,
       firstSell: firstSell ? {
@@ -367,12 +374,20 @@ function renderDebug(root) {
         qty: parseMoneyLocal(firstSell.quantity),
         price: parseMoneyLocal(firstSell.price),
         date: firstSell.date,
-        dateParsed: String(parseOpDate(firstSell.date)),
         ts: parseOpDate(firstSell.date) ? parseOpDate(firstSell.date).getTime() : 0
       } : null,
-      _check: firstBuy && firstSell ? {
-        sameFigi: firstBuy.figi === firstSell.figi,
-        buyBeforeSell: parseOpDate(firstBuy.date).getTime() < parseOpDate(firstSell.date).getTime()
+      realError: realError,
+      realResult: realResult ? {
+        sells: realResult.sells,
+        tradesPerYear: realResult.tradesPerYear,
+        avgHoldDays: realResult.avgHoldDays,
+        minHoldDays: realResult.minHoldDays,
+        maxHoldDays: realResult.maxHoldDays,
+        minHoldFigi: realResult.minHoldFigi,
+        maxHoldFigi: realResult.maxHoldFigi,
+        profitableShare: realResult.profitableShare,
+        unprofitableShare: realResult.unprofitableShare,
+        commissionsTotal: realResult.commissionsTotal
       } : null
     };
 
