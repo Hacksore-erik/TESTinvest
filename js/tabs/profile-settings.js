@@ -1,5 +1,5 @@
 import { CONFIG } from '../core.js';
-import { getErrorCount, downloadLog } from '../logger.js';
+import { getErrorCount, downloadLog, clearErrors } from '../logger.js';
 
 // ============================================================
 // ===== TEMPLATE =============================================
@@ -69,16 +69,111 @@ export function mount(root) {
   const aboutExpand = root.querySelector('#aboutExpand');
   const aboutChev = root.querySelector('#aboutChev');
 
-  // --- Журнал ошибок ---
-  errorLogRow.addEventListener('click', () => {
-    if (errorLogRow.classList.contains('disabled')) return;
-    downloadLog();
-  });
+  // --- Журнал ошибок: тап = скачать, долгий тап = очистить ---
+  initErrorLogInteractions(root, errorLogRow);
 
   // --- О приложении: раскрытие ---
   aboutRow.addEventListener('click', () => {
     const open = aboutExpand.classList.toggle('open');
     aboutChev.classList.toggle('open', open);
+  });
+}
+
+// ============================================================
+// ===== ЖУРНАЛ ОШИБОК: тап + долгий тап ======================
+// ============================================================
+function initErrorLogInteractions(root, row) {
+  let pressTimer = null;
+  let longPressed = false;
+
+  const startPress = () => {
+    if (row.classList.contains('disabled')) return;
+    longPressed = false;
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      openClearModal(root);
+    }, 600);
+  };
+
+  const cancelPress = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+  };
+
+  // --- Тач ---
+  row.addEventListener('touchstart', startPress, { passive: true });
+  row.addEventListener('touchend', (e) => {
+    cancelPress();
+    if (longPressed) {
+      e.preventDefault();
+      return;
+    }
+    if (!row.classList.contains('disabled')) {
+      downloadLog();
+    }
+  }, { passive: false });
+  row.addEventListener('touchmove', cancelPress, { passive: true });
+  row.addEventListener('touchcancel', cancelPress, { passive: true });
+
+  // --- Мышь (десктоп) ---
+  row.addEventListener('mousedown', startPress);
+  row.addEventListener('mouseup', () => {
+    cancelPress();
+    if (!longPressed && !row.classList.contains('disabled')) {
+      downloadLog();
+    }
+  });
+  row.addEventListener('mouseleave', cancelPress);
+}
+
+// ============================================================
+// ===== МОДАЛКА «ОЧИСТИТЬ ЖУРНАЛ» ============================
+// ============================================================
+function openClearModal(root) {
+  if (root.querySelector('#errorClearModal')) return;
+
+  const count = getErrorCount();
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.id = 'errorClearModal';
+
+  backdrop.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-title">Очистить журнал ошибок?</div>
+      <div class="modal-desc">
+        Будет удалено <span class="hl">${count}</span> ${plural(count, 'запись', 'записи', 'записей')}.
+        Это действие нельзя отменить.
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="errClearCancel">Отмена</button>
+        <button class="modal-btn danger" id="errClearConfirm">Очистить</button>
+      </div>
+    </div>
+  `;
+
+  root.appendChild(backdrop);
+
+  requestAnimationFrame(() => backdrop.classList.add('open'));
+
+  const close = () => {
+    backdrop.classList.remove('open');
+    setTimeout(() => backdrop.remove(), 250);
+  };
+
+  backdrop.querySelector('#errClearCancel').addEventListener('click', close);
+
+  backdrop.querySelector('#errClearConfirm').addEventListener('click', () => {
+    clearErrors();
+    close();
+    setTimeout(() => render(root), 260);
+  });
+
+  // Тап на фон — закрыть
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) close();
   });
 }
 
@@ -93,6 +188,16 @@ export function render(root) {
   const count = getErrorCount();
   errorCount.textContent = String(count);
 
-  // Если ошибок нет — строка серая, неактивная
   errorLogRow.classList.toggle('disabled', count === 0);
+}
+
+// ============================================================
+// ===== СКЛОНЕНИЕ ============================================
+// ============================================================
+function plural(n, one, few, many) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
 }
