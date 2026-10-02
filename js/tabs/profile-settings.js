@@ -85,14 +85,27 @@ export function mount(root) {
 function initErrorLogInteractions(root, row) {
   let pressTimer = null;
   let longPressed = false;
+  let startX = 0;
+  let startY = 0;
 
-  const startPress = () => {
+  const startPress = (e) => {
     if (row.classList.contains('disabled')) return;
+
     longPressed = false;
+
+    // Запомним точку старта — для отмены по свайпу
+    const point = e.touches ? e.touches[0] : e;
+    startX = point.clientX;
+    startY = point.clientY;
+
     pressTimer = setTimeout(() => {
       longPressed = true;
+
+      // Haptic-отклик (iPhone)
+      if (navigator.vibrate) navigator.vibrate(15);
+
       openClearModal(root);
-    }, 600);
+    }, 500);
   };
 
   const cancelPress = () => {
@@ -102,30 +115,47 @@ function initErrorLogInteractions(root, row) {
     }
   };
 
-  // --- Тач ---
-  row.addEventListener('touchstart', startPress, { passive: true });
-  row.addEventListener('touchend', (e) => {
+  const movePress = (e) => {
+    if (!pressTimer) return;
+    const point = e.touches ? e.touches[0] : e;
+    const dx = point.clientX - startX;
+    const dy = point.clientY - startY;
+    // Ушёл дальше 12px — отмена
+    if (Math.sqrt(dx * dx + dy * dy) > 12) {
+      cancelPress();
+    }
+  };
+
+  const endPress = (e) => {
+    const wasTimerActive = pressTimer !== null;
     cancelPress();
+
     if (longPressed) {
       e.preventDefault();
       return;
     }
-    if (!row.classList.contains('disabled')) {
-      downloadLog();
-    }
-  }, { passive: false });
-  row.addEventListener('touchmove', cancelPress, { passive: true });
-  row.addEventListener('touchcancel', cancelPress, { passive: true });
 
-  // --- Мышь (десктоп) ---
-  row.addEventListener('mousedown', startPress);
-  row.addEventListener('mouseup', () => {
-    cancelPress();
-    if (!longPressed && !row.classList.contains('disabled')) {
+    // Если таймер ещё не сработал и это не был долгий тап — обычный тап
+    if (wasTimerActive && !row.classList.contains('disabled')) {
       downloadLog();
     }
-  });
-  row.addEventListener('mouseleave', cancelPress);
+  };
+
+  // Отключаем стандартное поведение iOS для долгого тапа
+  row.style.webkitUserSelect = 'none';
+  row.style.userSelect = 'none';
+  row.style.webkitTouchCallout = 'none';
+  row.style.touchAction = 'manipulation';
+
+  // Запрет контекстного меню iOS (долгий тап по ссылкам/тексту)
+  row.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // Pointer Events — работают и на тач, и на мышь
+  row.addEventListener('pointerdown', startPress, { passive: true });
+  row.addEventListener('pointermove', movePress, { passive: true });
+  row.addEventListener('pointerup', endPress, { passive: false });
+  row.addEventListener('pointercancel', cancelPress, { passive: true });
+  row.addEventListener('pointerleave', cancelPress, { passive: true });
 }
 
 // ============================================================
