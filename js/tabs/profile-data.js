@@ -70,12 +70,20 @@ export function template() {
       <div class="position-note"><span>Режим: только чтение</span></div>
     </div>
 
+  <div class="position disabled">
+      <div class="position-top">
+        <div class="position-ticker">БКС</div>
+        <div class="position-soon">🔒 Скоро</div>
+      </div>
+      <div class="position-note"><span>Режим: только чтение</span></div>
+    </div>
+
     <div class="position disabled">
       <div class="position-top">
         <div class="position-ticker">Другие брокеры</div>
-        <div class="position-soon">🔒 Скоро</div>
+        <div class="position-soon">🔒 В разработке</div>
       </div>
-      <div class="position-note"><span>А-Инвестиции · Сбер · ВТБ · БКС</span></div>
+      <div class="position-note"><span>А-Инвестиции · Сбер · ВТБ</span></div>
     </div>
 
     <div class="position" id="disconnectBtn" style="display: none;">
