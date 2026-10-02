@@ -1052,3 +1052,89 @@
 }
 .journal-block .txt.green { color: var(--accent-green); }
 .journal-block .txt.red   { color: var(--accent-red); }
+/* ============================================================
+   ===== МОДАЛКА ПОДТВЕРЖДЕНИЯ ================================
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  padding: 0 16px 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.modal-backdrop.open opacity: 1;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-card-solid, #FFFFFF);
+  border-radius: var(--radius-lg, 22px);
+  padding: 24px 22px 20px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22),
+              0 4px 16px rgba(0, 0, 0, 0.10);
+  transform: translateY(20px) scale(0.98);
+  transition: transform 0.28s cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+.modal-backdrop.open .modal-sheet {
+  transform: translateY(0) scale(1);
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #1D1D1F);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.modal-desc {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary, rgba(29,29,31,0.62));
+  text-align: center;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+.modal-desc .hl {
+  color: var(--text-primary, #1D1D1F);
+  font-weight: 700;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+}
+.modal-btn {
+  flex: 1;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.modal-btn:active {
+  transform: scale(0.97);
+}
+.modal-btn.cancel {
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--text-primary, #1D1D1F);
+}
+.modal-btn.danger {
+  background: var(--accent-red, #C4423A);
+  color: #FFFFFF;
+}
